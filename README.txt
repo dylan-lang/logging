@@ -47,7 +47,7 @@ There are several things to notice about the above setup:
 
     So what's the benefit of having both loggers?  You can enable/disable
     them separately at runtime.  Also, if for example you wanted to log
-    debug messages to a separate file  you could add a target to the
+    debug messages to a separate file you could add a target to the
     my-app.debug logger.
 
 Log to a file::
