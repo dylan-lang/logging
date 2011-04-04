@@ -7,7 +7,7 @@ Copyright: Copyright (c) 2011 Carl L Gay
 
 /* 
 
-See README.txt for documentation.
+See README.rst for documentation.
 
 todo -- implement keep-versions in <rolling-file-log-target>
 
