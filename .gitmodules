@@ -1,0 +1,3 @@
+[submodule "submodules/uncommon-dylan"]
+	path = submodules/uncommon-dylan
+	url = git@github.com:dylan-lang/uncommon-dylan
