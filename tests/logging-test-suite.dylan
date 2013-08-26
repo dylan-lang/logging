@@ -109,6 +109,6 @@ define test test-process-id ()
     log-info(logger, "this is ignored");
     check-equal("log stream contains process id only",
                 stream-contents(target.target-stream),
-                format-to-string(current-process-id()));
+                format-to-string("%d\n", current-process-id()));
   end;
 end;

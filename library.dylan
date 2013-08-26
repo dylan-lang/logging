@@ -89,8 +89,9 @@ define module logging
     write-message,
 
     // Misc
+    as-common-logfile-date,
     date-to-stream,           // questionable
-    as-common-logfile-date;
+    current-process-id;
 
 end module logging;
 

@@ -243,7 +243,7 @@ define method %get-logger
     logger
   else
     let child = element(logger.logger-children, first(path), default: #f);
-    child & %get-logger(child, rest(path), original-name)
+    child & %get-logger(child, path.tail, original-name)
   end
 end method %get-logger;
 
@@ -284,7 +284,7 @@ define method add-logger
       child := make(<placeholder-logger>, name: name, parent: parent);
       parent.logger-children[name] := child;
     end;
-    add-logger(child, new, rest(path), original-name);
+    add-logger(child, new, path.tail, original-name);
   end;
 end method add-logger;
 
