@@ -94,6 +94,17 @@ todo -- See http://pypi.python.org/pypi/LogPy/1.0 for some (well, at least one)
 
 define variable $root-logger :: false-or(<logger>) = #f;
 
+define sealed generic logger-name
+    (logger :: <abstract-logger>) => (name :: <string>);
+define sealed generic logger-parent
+    (logger :: <abstract-logger>) => (parent :: false-or(<abstract-logger>));
+define sealed generic logger-children
+    (logger :: <abstract-logger>) => (children :: <string-table>);
+define sealed generic logger-additive?
+    (logger :: <abstract-logger>) => (additive? :: <boolean>);
+define sealed generic logger-enabled?
+    (logger :: <abstract-logger>) => (enabled? :: <boolean>);
+
 define abstract class <abstract-logger> (<object>)
   // A dotted path name.  All parent loggers in the path must already exist.
   constant slot logger-name :: <string>,
@@ -134,7 +145,7 @@ define method initialize
   end;
 end method initialize;
 
-define method local-name
+define function local-name
     (logger :: <abstract-logger>)
  => (local-name :: <string>)
   last(split(logger.logger-name, '.'))
@@ -148,18 +159,19 @@ end;
 define open class <placeholder-logger> (<abstract-logger>)
 end;
 
+define sealed generic log-level (logger :: <logger>) => (level :: <log-level>);
+define sealed generic log-targets (logger :: <logger>) => (targets :: <vector>);
+define sealed generic log-formatter (logger :: <logger>) => (formatter :: <log-formatter>);
+
 define open class <logger> (<abstract-logger>)
-  slot log-level :: <log-level>,
-    init-keyword: level:,
-    init-value: $trace-level;
+  slot log-level :: <log-level> = $trace-level,
+    init-keyword: level:;
 
-  constant slot log-targets :: <stretchy-vector>,
-    init-keyword: targets:,
-    init-function: curry(make, <stretchy-vector>);
+  constant slot log-targets :: <stretchy-vector> = make(<stretchy-vector>),
+    init-keyword: targets:;
 
-  slot log-formatter :: <log-formatter>,
-    init-keyword: formatter:,
-    init-value: $default-log-formatter;
+  slot log-formatter :: <log-formatter> = $default-log-formatter,
+    init-keyword: formatter:;
 
 end class <logger>;
 
@@ -175,12 +187,10 @@ define method make
   // Make sure targets is a <stretchy-vector>.  It's convenient for users
   // to be able to pass list(make(<target> ...)) though.
   let targets = as(<stretchy-vector>, targets | #[]);
-  let logger
-    = apply(next-method, class,
-            targets: targets,
-            formatter: formatter | $default-log-formatter,
-            args);
-  logger
+  apply(next-method, class,
+        targets: targets,
+        formatter: formatter | $default-log-formatter,
+        args)
 end method make;
 
 define method print-object
@@ -191,33 +201,34 @@ define method print-object
   else
     format(stream, "%s (%sadditive, level: %s, targets: %s)",
            logger.logger-name,
-           iff(logger.logger-additive?, "", "non-"),
+           if (logger.logger-additive?) "" else "non-" end,
            logger.log-level.level-name,
-           iff(empty?(logger.log-targets),
-               "None",
-               join(logger.log-targets, ", ",
-                    key: curry(format-to-string, "%s"))));
+           if (empty?(logger.log-targets))
+             "None"
+           else
+             join(logger.log-targets, ", ", key: curry(format-to-string, "%s"))
+           end);
   end;
 end method print-object;
 
-define method add-target
+define function add-target
     (logger :: <logger>, target :: <log-target>)
   add-new!(logger.log-targets, target)
 end;
 
-define method remove-target
+define function remove-target
     (logger :: <logger>, target :: <log-target>)
   remove!(logger.log-targets, target);
 end;
 
-define method remove-all-targets
+define function remove-all-targets
     (logger :: <logger>)
   for (target in logger.log-targets)
     remove-target(logger, target)
   end;
 end;
 
-define open class <logging-error> (<error>, <format-string-condition>)
+define open class <logging-error> (<error>, <simple-condition>)
 end;
 
 define function logging-error
@@ -227,12 +238,12 @@ define function logging-error
               format-arguments: args))
 end;
 
-define method get-root-logger
+define function get-root-logger
     () => (logger :: <logger>)
   $root-logger
 end;
 
-define method get-logger
+define function get-logger
     (name :: <string>) => (logger :: false-or(<abstract-logger>))
   %get-logger($root-logger, as(<list>, split(name, '.')), name)
 end;
@@ -258,7 +269,7 @@ define method %get-logger
 end method %get-logger;
 
 
-define method add-logger
+define function add-logger
     (parent :: <abstract-logger>, new :: <abstract-logger>, path :: <list>,
      original-name :: <string>)
   let name :: <string> = first(path);
@@ -286,7 +297,7 @@ define method add-logger
     end;
     add-logger(child, new, path.tail, original-name);
   end;
-end method add-logger;
+end function add-logger;
 
 
 
@@ -298,7 +309,7 @@ end method add-logger;
 // Root of the log level hierarchy.  Logging uses a simple class
 // hierarchy to determine what messages should be logged.
 //
-define open abstract primary class <log-level> (<singleton-object>)
+define open abstract primary class <log-level> (<object>)
   constant slot level-name :: <byte-string>,
     init-keyword: name:;
 end;
@@ -392,13 +403,15 @@ end;
 
 // I'm not sure log-trace is a useful distinction from log-debug.
 // I copied it from log4j terminology.  I dropped log-fatal.
+// TODO(cgay): these days I would probably drop log-trace and keep
+// log-fatal.  It's a nice way to exit the program with a backtrace.
 
 define constant log-trace = curry(log-message, $trace-level);
 
 define constant log-debug = curry(log-message, $debug-level);
 
-define inline method log-debug-if
-    (test, logger :: <logger>, object, #rest args)
+define inline function log-debug-if
+    (test, logger :: <abstract-logger>, object, #rest args)
   if (test)
     apply(log-debug, logger, object, args);
   end;
@@ -497,41 +510,6 @@ define method write-message
     (target :: <stream-log-target>, format-string :: <string>, #rest args)
   apply(format, target.target-stream, format-string, args);
 end;
-
-define method date-to-stream
-    (stream :: <stream>, date :: <date>)
-  let (year, month, day, hours, minutes, seconds, day-of-week, time-zone-offset)
-    = decode-date(date);
-  let millis = round/(date-microseconds(date), 1000);
-  format(stream, "%d-%s%d-%s%d %s%d:%s%d:%s%d.%s%s%d %s%s%d%s%d",
-         year,
-         iff(month < 10, "0", ""),
-         month,
-         iff(day < 10, "0", ""),
-         day,
-         iff(hours < 10, "0", ""),
-         hours,
-         iff(minutes < 10, "0", ""),
-         minutes,
-         iff(seconds < 10, "0", ""),
-         seconds,
-         iff(millis < 100, "0", ""),
-         iff(millis < 10, "0", ""),
-         millis,
-         iff(negative?(time-zone-offset), "-", "+"),  // +0000
-         iff(abs(floor/(time-zone-offset, 60)) < 10, "0", ""),
-         abs(floor/(time-zone-offset, 60)),
-         iff(modulo(time-zone-offset, 60) < 10, "0", ""),
-         modulo(time-zone-offset, 60));
-end;
-
-define method as-common-logfile-date
-    (date :: <date>)
- => (common-logfile-date :: <string>)
-  //Common Logfile Format Date: "28/Mar/2004:04:47:19 +0200"
-  //http://www.w3.org/Daemon/User/Config/Logging.html
-  format-date("%d/%b/%Y:%T %z", date)
-end method as-common-logfile-date;
 
 
 // A log target that is backed by a single, monolithic file.
@@ -751,7 +729,7 @@ define method parse-formatter-pattern
                             pattern);
             else
               let char = pattern[index];
-              inc!(index);
+              index := index + 1;
               char
             end
           end method;
@@ -816,9 +794,11 @@ define method parse-formatter-pattern
               next-char();   // eat '}'
               select (word by \=)
                 "date" => method ()
-                            pad(iff(arg,
-                                    format-date(arg, current-date()),
-                                    as-iso8601-string(current-date())))
+                            pad(if (arg)
+                                  format-date(arg, current-date())
+                                else
+                                  as-iso8601-string(current-date())
+                                end)
                           end;
                 "level" => method () pad(level-name(*current-log-level*)) end;
                 "message" =>
