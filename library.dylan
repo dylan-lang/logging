@@ -86,12 +86,7 @@ define module logging
     current-log-object,
     current-log-args,
     pattern-to-stream,
-    write-message,
-
-    // Misc
-    as-common-logfile-date,
-    date-to-stream,           // questionable
-    current-process-id;
+    write-message;
 
 end module logging;
 
@@ -117,16 +112,12 @@ define module logging-impl
   use standard-io;
   use streams;
   use threads;
-  use uncommon-dylan,
-    import: { iff,
-              inc!,
-              <singleton-object>,
-              <string-trie>, add-object, find-object };
 
   export
     // for test suite
     elapsed-milliseconds,
-    reset-logging;
+    reset-logging,
+    current-process-id;  // Move to System lib.
 
 end module logging-impl;
 

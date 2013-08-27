@@ -15,18 +15,18 @@ end library-spec logging;
 //
 define module-spec logging
     (setup-function: curry(ensure-directories-exist, $temp-directory))
-  class <abstract-logger> (<object>);
-  class <file-log-target> (<log-target>);
-  class <log-formatter> (<object>);
-  class <log-target> (<closable-object>);
-  class <logger> (<abstract-logger>);
-  instantiable class <logging-error> (<error>, <format-string-condition>);
+  open abstract class <abstract-logger> (<object>);
+  sealed /* instantiable */ class <file-log-target> (<log-target>);
+  open /* instantiable */ class <log-formatter> (<object>);
+  open /* instantiable */ class <log-target> (<closable-object>);
+  open /* instantiable */ class <logger> (<abstract-logger>);
+  instantiable class <logging-error> (<error>, <simple-condition>);
   instantiable class <null-log-target> (<log-target>);
-  class <placeholder-logger> (<abstract-logger>);
-  class <rolling-file-log-target> (<file-log-target>);
+  sealed class <placeholder-logger> (<abstract-logger>);
+  sealed class <rolling-file-log-target> (<file-log-target>);
   class <stream-log-target> (<log-target>);
 
-  class <log-level> (<singleton-object>);
+  class <log-level> (<object>);
   instantiable class <debug-level> (<trace-level>);
   instantiable class <error-level> (<warn-level>);
   instantiable class <info-level> (<debug-level>);
@@ -49,11 +49,9 @@ define module-spec logging
   constant $stdout-log-target :: <object>;
 
   function add-target (<logger>, <log-target>) => ();
-  function as-common-logfile-date (<date>) => (<string>);
   function current-log-args () => (<sequence>);
   function current-log-object () => (<object>);
-  function date-to-stream (<stream>, <date>) => ();
-  function get-logger (<string>) => (<abstract-logger>);
+  function get-logger (<string>) => (false-or(<abstract-logger>));
   function get-root-logger () => (<logger>);
   function level-name (<log-level>) => (<string>);
   function log-debug-if (<object>, <abstract-logger>, <string>) => ();
