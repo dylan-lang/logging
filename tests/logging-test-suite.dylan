@@ -78,7 +78,7 @@ define function test-log-level
                       level: logger-level,
                       formatter: $message-only-formatter);
     log-fn(logger, "xxx");
-    let expected = iff(current-priority >= logger-priority, "xxx\n", "");
+    let expected = if (current-priority >= logger-priority) "xxx\n" else "" end;
     let actual = stream-contents(target.target-stream);
     check-equal(fmt("Log output (%s) does not match expected (%s). Given level %s, "
                     "logger level %s", actual, expected, logger-level, current-level),

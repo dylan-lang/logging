@@ -11,7 +11,6 @@ define library logging
     import: { format, print, standard-io, streams };
   use system,
     import: { date, file-system, locators, threads };
-  use uncommon-dylan;
 
   export
     logging,
