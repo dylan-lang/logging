@@ -1,8 +1,7 @@
 Module:    logging-impl
 Author:    Carl L Gay
 Synopsis:  Simple logging mechanism.  Some ideas taken from log4j.
-Copyright: Copyright (c) 2011 Carl L Gay
-           See License.txt for details.
+Copyright: Copyright (c) 2013 Dylan Hackers.  See License.txt for details.
 
 
 /* 

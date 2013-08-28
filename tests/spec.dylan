@@ -1,7 +1,6 @@
 Module: logging-test-suite
 Author: Carl L Gay
-Copyright: Copyright (c) 2011 Carl L Gay
-           See License.txt for details.
+Copyright: Copyright (c) 2013 Dylan Hackers. See License.txt for details.
 
 // Defines constant logging-test-suite
 //
