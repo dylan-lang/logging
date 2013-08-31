@@ -1,4 +1,4 @@
-library: logging-test-suite-app
-files: app-library.dylan
-       app.dylan
+Library: logging-test-suite-app
 Copyright: Copyright (c) 2013 Dylan Hackers.  See License.txt for details.
+Files: app-library.dylan
+       app.dylan

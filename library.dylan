@@ -9,7 +9,7 @@ define library logging
   use io,
     import: { format, print, standard-io, streams };
   use system,
-    import: { date, file-system, locators, threads };
+    import: { date, file-system, locators, operating-system, threads };
 
   export
     logging,
@@ -106,6 +106,8 @@ define module logging-impl
               locator-name,
               merge-locators };
   use logging;
+  use operating-system,
+    import: { current-process-id };
   use print;
   use standard-io;
   use streams;
@@ -114,8 +116,7 @@ define module logging-impl
   export
     // for test suite
     elapsed-milliseconds,
-    reset-logging,
-    current-process-id;  // Move to System lib.
+    reset-logging;
 
 end module logging-impl;
 

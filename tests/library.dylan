@@ -8,7 +8,7 @@ define library logging-test-suite
   use io;
   use logging;
   use system,
-    import: { date, file-system, locators };
+    import: { date, file-system, locators, operating-system };
   use testworks;
   use testworks-specs;
 
@@ -26,10 +26,10 @@ define module logging-test-suite
   use file-system;
     //import: { <pathname>, with-open-file };
   use locators;
+  use operating-system,
+    import: { current-process-id };
   use testworks;
   use testworks-specs;
 
   export logging-test-suite;
 end;
-
-
