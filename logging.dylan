@@ -12,8 +12,6 @@ todo -- implement keep-versions in <rolling-file-log-target>
 
 todo -- implement compress-on-close? in <rolling-file-log-target>
 
-todo -- current-process-id is a stub
-
 todo -- configuration parser
 
 todo -- more documentation
@@ -109,30 +107,26 @@ define abstract class <abstract-logger> (<object>)
   constant slot logger-name :: <string>,
     required-init-keyword: name:;
 
-  slot logger-parent :: false-or(<abstract-logger>),
-    init-value: #f,
+  slot logger-parent :: false-or(<abstract-logger>) = #f,
     init-keyword: parent:;
 
-  constant slot logger-children :: <string-table>,
-    init-keyword: children:,
-    init-function: curry(make, <string-table>);
+  constant slot logger-children :: <string-table> = make(<string-table>),
+    init-keyword: children:;
 
   // If this is #t then log messages sent to this logger will be passed up
   // the hierarchy to parent loggers as well, until it reaches a logger
   // whose additivity is #f.  Terminology stolen from log4j.
   //
-  slot logger-additive? :: <boolean>,
-    init-keyword: additive:,
-    init-value: #t;
+  slot logger-additive? :: <boolean> = #t,
+    init-keyword: additive?:;
 
   // If disabled, no messages will be logged to this logger's targets.
   // The value of logger-additive? will still be respected.  In other
   // words, logging to a disabled logger will still log to ancestor
   // loggers if they are themselves enabled.
   //
-  slot logger-enabled? :: <boolean>,
-    init-keyword: enabled:,
-    init-value: #t;
+  slot logger-enabled? :: <boolean> = #t,
+    init-keyword: enabled?:;
 
 end class <abstract-logger>;
 
@@ -210,18 +204,18 @@ define method print-object
   end;
 end method print-object;
 
-define function add-target
-    (logger :: <logger>, target :: <log-target>)
+define method add-target
+    (logger :: <logger>, target :: <log-target>) => ()
   add-new!(logger.log-targets, target)
 end;
 
-define function remove-target
-    (logger :: <logger>, target :: <log-target>)
+define method remove-target
+    (logger :: <logger>, target :: <log-target>) => ()
   remove!(logger.log-targets, target);
 end;
 
-define function remove-all-targets
-    (logger :: <logger>)
+define method remove-all-targets
+    (logger :: <logger>) => ()
   for (target in logger.log-targets)
     remove-target(logger, target)
   end;
@@ -352,6 +346,11 @@ end;
 //// Logging messages
 ////
 
+// The reason for these thread variables is to make it possible for
+// the zero argument function created by the log formatter pattern
+// parser for the %{message} format to be able to do its thing.  It's
+// probably possible to get rid of them.
+
 define thread variable *current-log-object* = #f;
 
 define function current-log-object
@@ -375,6 +374,7 @@ define thread variable *current-log-target* :: false-or(<log-target>) = #f;
 //
 define method log-message
     (given-level :: <log-level>, logger :: <logger>, object :: <object>, #rest args)
+ => ()
   if (logger.logger-enabled?
         & log-level-applicable?(given-level, logger.log-level))
     dynamic-bind (*current-log-object* = object,
@@ -440,13 +440,15 @@ end;
 //
 define open generic log-to-target
     (target :: <log-target>, formatter :: <log-formatter>, object :: <object>,
-     #rest args);
+     #rest args)
+ => ();
 
 // Override this if you want to use a normal formatter string but
 // want to write objects to the log stream instead of strings.
 //
 define open generic write-message
-    (target :: <log-target>, object :: <object>, #rest args);
+    (target :: <log-target>, object :: <object>, #rest args)
+ => ();
 
 
 // Note that there is no default method on "object :: <object>".
@@ -464,6 +466,7 @@ end;
 define sealed method log-to-target
     (target :: <null-log-target>,
      formatter :: <log-formatter>, format-string :: <string>, #rest args)
+ => ()
   // do nothing
 end;
 
@@ -497,6 +500,7 @@ define constant $stderr-log-target
 define method log-to-target
     (target :: <stream-log-target>,
      formatter :: <log-formatter>, format-string :: <string>, #rest args)
+ => ()
   let stream :: <stream> = target.target-stream;
   with-stream-locked (stream)
     pattern-to-stream(formatter, stream);
@@ -507,8 +511,9 @@ end method log-to-target;
 
 define method write-message
     (target :: <stream-log-target>, format-string :: <string>, #rest args)
+ => ()
   apply(format, target.target-stream, format-string, args);
-end;
+end method write-message;
 
 
 // A log target that is backed by a single, monolithic file.
@@ -517,8 +522,7 @@ end;
 define class <file-log-target> (<log-target>)
   constant slot target-pathname :: <pathname>,
     required-init-keyword: pathname:;
-  slot target-stream :: false-or(<file-stream>),
-    init-value: #f;
+  slot target-stream :: false-or(<file-stream>) = #f;
 end;
 
 define method initialize
@@ -554,6 +558,7 @@ end;
 define method log-to-target
     (target :: <file-log-target>,
      formatter :: <log-formatter>, format-string :: <string>, #rest format-args)
+ => ()
   let stream :: <stream> = target.target-stream;
   with-stream-locked (stream)
     pattern-to-stream(formatter, stream);
@@ -564,6 +569,7 @@ end method log-to-target;
 
 define method write-message
     (target :: <file-log-target>, format-string :: <string>, #rest args)
+ => ()
   apply(format, target.target-stream, format-string, args);
 end;
 
@@ -590,9 +596,8 @@ end;
 //
 define class <rolling-file-log-target> (<file-log-target>)
 
-  constant slot max-file-size :: <integer>,
-    init-keyword: #"max-size",
-    init-value: 20 * 1024 * 1024;
+  constant slot max-file-size :: <integer> = 100 * 1024 * 1024,
+    init-keyword: max-size:;
 
   // TODO: not yet implemented
   // If this is #f then all versions are kept.
@@ -605,8 +610,7 @@ define class <rolling-file-log-target> (<file-log-target>)
 
   // Date when the underlying file was created.  When it gets closed
   // it will be renamed with this date in the name.
-  slot file-creation-date :: <date>,
-    init-function: current-date;
+  slot file-creation-date :: <date> = current-date();
 
 end class <rolling-file-log-target>;
 
@@ -636,6 +640,7 @@ end method print-object;
 define method log-to-target
     (target :: <rolling-file-log-target>,
      formatter :: <log-formatter>, format-string :: <string>, #rest format-args)
+ => ()
   next-method();
   // todo -- calling stream-size may be very slow?  Maybe log-to-target should
   // return the number of bytes written, but that could be inefficient (e.g.,
@@ -654,6 +659,9 @@ define method roll-log-file
     end;
     // todo -- make the archived log filename accept %{date:fmt} and
     //         %{version} escapes.  e.g., "foo.log.%{version}"
+    // Also consider putting more info in the rolled filenames, such
+    // as process id, hostname, etc.  Makes it easier to combine files
+    // into a single location.
     let date = format-date("%Y%m%dT%H%M%S", target.file-creation-date);
     let oldloc = as(<file-locator>, target.target-pathname);
     let newloc = merge-locators(as(<file-locator>,
@@ -690,7 +698,7 @@ end;
 // Should be called with the stream locked.
 //
 define method pattern-to-stream
-    (formatter :: <log-formatter>, stream :: <stream>)
+    (formatter :: <log-formatter>, stream :: <stream>) => ()
   for (item in formatter.parsed-pattern)
     if (instance?(item, <string>))
       write(stream, item);
@@ -842,14 +850,6 @@ end method parse-formatter-pattern;
 define constant $default-log-formatter :: <log-formatter>
   = make(<log-formatter>, pattern: "%{date:%Y-%m-%dT%H:%M:%S.%F%z} %-5L [%t] %m");
 
-// stub -- not sure if getpid exists yet.
-//         it's not in the operating-system module at least.
-//
-define function current-process-id
-    () => (pid :: <integer>)
-  0
-end;
-
 define constant $application-start-date :: <date> = current-date();
 
 define function elapsed-milliseconds
@@ -870,7 +870,7 @@ end function elapsed-milliseconds;
 define function reset-logging
     ()
   // maybe should close existing log targets?
-  $root-logger := make(<logger>, name: "root", additive: #f, enabled: #f);
+  $root-logger := make(<logger>, name: "root", additive?: #f, enabled?: #f);
 end;
 
 /////////////////////////////////////////////////////

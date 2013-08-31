@@ -1,5 +1,5 @@
-library: logging-test-suite
-files: library
+Library: logging-test-suite
+Copyright: Copyright (c) 2013 Dylan Hackers.  See License.txt for details.
+Files: library
        logging-test-suite
        spec
-Copyright: Copyright (c) 2013 Dylan Hackers.  See License.txt for details.

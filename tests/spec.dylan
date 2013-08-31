@@ -239,7 +239,7 @@ end function-test log-to-target;
 define logging function-test logger-additive? ()
   // Make sure non-additive logger DOESN'T pass it on to parent.
   let logger1 = make-test-logger("aaa");
-  let logger2 = make-test-logger("aaa.bbb", additive: #f);
+  let logger2 = make-test-logger("aaa.bbb", additive?: #f);
   log-error(logger2, "xxx");
   check-equal("non-additivity respected for target1",
               stream-contents(logger1.log-targets[0].target-stream),
@@ -250,7 +250,7 @@ define logging function-test logger-additive? ()
 
   // Make sure additive logger DOES pass it on to parent.
   let logger1 = make-test-logger("xxx");
-  let logger2 = make-test-logger("xxx.yyy", additive: #t);
+  let logger2 = make-test-logger("xxx.yyy", additive?: #t);
   log-error(logger2, "xxx");
   check-equal("additivity respected for target1",
               stream-contents(logger1.log-targets[0].target-stream),
