@@ -79,7 +79,7 @@ define function test-log-level
     log-fn(logger, "xxx");
     let expected = if (current-priority >= logger-priority) "xxx\n" else "" end;
     let actual = stream-contents(target.target-stream);
-    check-equal(fmt("Log output (%s) does not match expected (%s). Given level %s, "
+    check-equal(fmt("Log output (%=) matches expected (%=). Given level %s, "
                     "logger level %s", actual, expected, logger-level, current-level),
                 expected, actual);
   end;
