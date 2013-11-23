@@ -200,17 +200,11 @@ end constant-test log-warning;
 define logging function-test add-target ()
 end function-test add-target;
 
-define logging function-test as-common-logfile-date ()
-end function-test as-common-logfile-date;
-
 define logging function-test current-log-args ()
 end function-test current-log-args;
 
 define logging function-test current-log-object ()
 end function-test current-log-object;
-
-define logging function-test date-to-stream ()
-end function-test date-to-stream;
 
 define logging function-test get-logger ()
 end function-test get-logger;
