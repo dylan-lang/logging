@@ -2,14 +2,6 @@ Module: logging-test-suite
 Author: Carl L Gay
 Copyright: Copyright (c) 2013 Dylan Hackers. See License.txt for details.
 
-// Defines constant logging-test-suite
-//
-define library-spec logging ()
-  module logging;
-  test test-elapsed-milliseconds;
-  test test-process-id;
-end library-spec logging;
-
 // Defines suite logging-module-test-suite.
 //
 define module-spec logging
@@ -290,3 +282,11 @@ end function-test remove-target;
 
 define logging function-test write-message ()
 end function-test write-message;
+
+// Defines constant logging-test-suite
+//
+define library-spec logging ()
+  module logging;
+  test test-elapsed-milliseconds;
+  test test-process-id;
+end library-spec logging;
