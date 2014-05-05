@@ -547,6 +547,7 @@ define open generic open-target-stream
 define method open-target-stream
     (target :: <file-log-target>)
  => (stream :: <file-stream>)
+  ensure-directories-exist(target.target-pathname);
   target.target-stream := make(<file-stream>,
                                locator: target.target-pathname,
                                element-type: <character>,
