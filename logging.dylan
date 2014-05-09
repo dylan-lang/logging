@@ -382,7 +382,7 @@ define method log-message
                   *current-log-level* = given-level)
       for (target :: <log-target> in logger.log-targets)
         dynamic-bind (*current-log-target* = target)
-          apply(log-to-target, target, logger.log-formatter, object, args);
+          log-to-target(target, logger.log-formatter, object, args);
         end;
       end;
     end;
@@ -440,14 +440,14 @@ end;
 //
 define open generic log-to-target
     (target :: <log-target>, formatter :: <log-formatter>, object :: <object>,
-     #rest args)
+     args :: <sequence>)
  => ();
 
 // Override this if you want to use a normal formatter string but
 // want to write objects to the log stream instead of strings.
 //
 define open generic write-message
-    (target :: <log-target>, object :: <object>, #rest args)
+    (target :: <log-target>, object :: <object>, args :: <sequence>)
  => ();
 
 
@@ -465,7 +465,7 @@ end;
 
 define sealed method log-to-target
     (target :: <null-log-target>,
-     formatter :: <log-formatter>, format-string :: <string>, #rest args)
+     formatter :: <log-formatter>, format-string :: <string>, args :: <sequence>)
  => ()
   // do nothing
 end;
@@ -498,8 +498,8 @@ define constant $stderr-log-target
   = make(<stream-log-target>, stream: *standard-error*);
 
 define method log-to-target
-    (target :: <stream-log-target>,
-     formatter :: <log-formatter>, format-string :: <string>, #rest args)
+    (target :: <stream-log-target>, formatter :: <log-formatter>,
+     format-string :: <string>, args :: <sequence>)
  => ()
   let stream :: <stream> = target.target-stream;
   with-stream-locked (stream)
@@ -510,7 +510,7 @@ define method log-to-target
 end method log-to-target;
 
 define method write-message
-    (target :: <stream-log-target>, format-string :: <string>, #rest args)
+    (target :: <stream-log-target>, format-string :: <string>, args :: <sequence>)
  => ()
   apply(format, target.target-stream, format-string, args);
 end method write-message;
@@ -558,7 +558,7 @@ end;
 
 define method log-to-target
     (target :: <file-log-target>,
-     formatter :: <log-formatter>, format-string :: <string>, #rest format-args)
+     formatter :: <log-formatter>, format-string :: <string>, format-args :: <sequence>)
  => ()
   let stream :: <stream> = target.target-stream;
   with-stream-locked (stream)
@@ -569,7 +569,7 @@ define method log-to-target
 end method log-to-target;
 
 define method write-message
-    (target :: <file-log-target>, format-string :: <string>, #rest args)
+    (target :: <file-log-target>, format-string :: <string>, args :: <sequence>)
  => ()
   apply(format, target.target-stream, format-string, args);
 end;
@@ -639,8 +639,8 @@ define method print-object
 end method print-object;
 
 define method log-to-target
-    (target :: <rolling-file-log-target>,
-     formatter :: <log-formatter>, format-string :: <string>, #rest format-args)
+    (target :: <rolling-file-log-target>, formatter :: <log-formatter>,
+     format-string :: <string>, format-args :: <sequence>)
  => ()
   next-method();
   // todo -- calling stream-size may be very slow?  Maybe log-to-target should
@@ -811,8 +811,8 @@ define method parse-formatter-pattern
                 "level" => method () pad(level-name(*current-log-level*)) end;
                 "message" =>
                   method ()
-                    apply(write-message, *current-log-target*, *current-log-object*,
-                          *current-log-args*);
+                    write-message(*current-log-target*, *current-log-object*,
+                                  *current-log-args*);
                     #f
                   end;
                 "pid" => compose(pad, integer-to-string, current-process-id);
@@ -831,8 +831,8 @@ define method parse-formatter-pattern
                            pad(level-name(*current-log-level*))
                          end;
              'm' => method ()
-                      apply(write-message, *current-log-target*, *current-log-object*,
-                            *current-log-args*);
+                      write-message(*current-log-target*, *current-log-object*,
+                                    *current-log-args*);
                       #f
                     end;
              'p' => compose(pad, integer-to-string, current-process-id);
