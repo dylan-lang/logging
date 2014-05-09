@@ -49,7 +49,7 @@ define module-spec logging
   function log-level-setter (<log-level>, <logger>) => (<log-level>);
   function log-level (<logger>) => (<log-level>);
   function log-message (<log-level>, <logger>, <object>) => ();
-  function log-to-target (<log-target>, <log-formatter>, <object>) => ();
+  function log-to-target (<log-target>, <log-formatter>, <object>, <sequence>) => ();
   function logger-additive?-setter (<boolean>, <abstract-logger>) => (<boolean>);
   function logger-additive? (<abstract-logger>) => (<boolean>);
   function logger-enabled?-setter (<boolean>, <abstract-logger>) => (<boolean>);
@@ -57,7 +57,7 @@ define module-spec logging
   function logger-name (<abstract-logger>) => (<string>);
   function pattern-to-stream (<log-formatter>, <stream>) => ();
   function remove-target (<logger>, <log-target>) => ();
-  function write-message (<log-target>, <object>) => ();
+  function write-message (<log-target>, <object>, <sequence>) => ();
 end module-spec logging;
 
 define logging class-test <abstract-logger> ()
