@@ -81,8 +81,6 @@ define module logging
     <placeholder-logger>,
     log-to-target,
     log-message,
-    current-log-object,
-    current-log-args,
     pattern-to-stream,
     write-message;
 

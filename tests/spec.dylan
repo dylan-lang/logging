@@ -40,8 +40,6 @@ define module-spec logging
   constant $stdout-log-target :: <object>;
 
   function add-target (<logger>, <log-target>) => ();
-  function current-log-args () => (<sequence>);
-  function current-log-object () => (<object>);
   function get-logger (<string>) => (false-or(<abstract-logger>));
   function get-root-logger () => (<logger>);
   function level-name (<log-level>) => (<string>);

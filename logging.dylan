@@ -352,21 +352,8 @@ end;
 // probably possible to get rid of them.
 
 define thread variable *current-log-object* = #f;
-
-define function current-log-object
-    () => (obj :: <object>)
-  *current-log-object*
-end;
-
 define thread variable *current-log-args* :: <sequence> = #[];
-
-define function current-log-args
-    () => (args :: <sequence>)
-  *current-log-args*
-end;
-
 define thread variable *current-log-level* :: false-or(<log-level>) = #f;
-
 define thread variable *current-log-target* :: false-or(<log-target>) = #f;
 
 // This is generally called via log-info, log-error, etc, which simply curry
