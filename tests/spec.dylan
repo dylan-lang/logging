@@ -40,8 +40,6 @@ define module-spec logging
   constant $stdout-log-target :: <object>;
 
   function add-target (<logger>, <log-target>) => ();
-  function current-log-args () => (<sequence>);
-  function current-log-object () => (<object>);
   function get-logger (<string>) => (false-or(<abstract-logger>));
   function get-root-logger () => (<logger>);
   function level-name (<log-level>) => (<string>);
@@ -49,13 +47,13 @@ define module-spec logging
   function log-level-setter (<log-level>, <logger>) => (<log-level>);
   function log-level (<logger>) => (<log-level>);
   function log-message (<log-level>, <logger>, <object>) => ();
-  function log-to-target (<log-target>, <log-formatter>, <object>, <sequence>) => ();
+  function log-to-target (<log-target>, <log-level>, <log-formatter>, <object>, <sequence>) => ();
   function logger-additive?-setter (<boolean>, <abstract-logger>) => (<boolean>);
   function logger-additive? (<abstract-logger>) => (<boolean>);
   function logger-enabled?-setter (<boolean>, <abstract-logger>) => (<boolean>);
   function logger-enabled? (<abstract-logger>) => (<boolean>);
   function logger-name (<abstract-logger>) => (<string>);
-  function pattern-to-stream (<log-formatter>, <stream>) => ();
+  function pattern-to-stream (<log-formatter>, <stream>, <log-level>, <log-target>, <object>, <sequence>) => ();
   function remove-target (<logger>, <log-target>) => ();
   function write-message (<log-target>, <object>, <sequence>) => ();
 end module-spec logging;
