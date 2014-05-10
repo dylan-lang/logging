@@ -346,32 +346,15 @@ end;
 //// Logging messages
 ////
 
-// The reason for these thread variables is to make it possible for
-// the zero argument function created by the log formatter pattern
-// parser for the %{message} format to be able to do its thing.  It's
-// probably possible to get rid of them.
-
-define thread variable *current-log-object* = #f;
-define thread variable *current-log-args* :: <sequence> = #[];
-define thread variable *current-log-level* :: false-or(<log-level>) = #f;
-define thread variable *current-log-target* :: false-or(<log-target>) = #f;
-
 // This is generally called via log-info, log-error, etc, which simply curry
 // the first argument.
 //
 define method log-message
     (given-level :: <log-level>, logger :: <logger>, object :: <object>, #rest args)
  => ()
-  if (logger.logger-enabled?
-        & log-level-applicable?(given-level, logger.log-level))
-    dynamic-bind (*current-log-object* = object,
-                  *current-log-args* = args,
-                  *current-log-level* = given-level)
-      for (target :: <log-target> in logger.log-targets)
-        dynamic-bind (*current-log-target* = target)
-          log-to-target(target, logger.log-formatter, object, args);
-        end;
-      end;
+  if (logger.logger-enabled?  & log-level-applicable?(given-level, logger.log-level))
+    for (target :: <log-target> in logger.log-targets)
+      log-to-target(target, given-level, logger.log-formatter, object, args);
     end;
   end;
   if (logger.logger-additive?)
@@ -426,8 +409,8 @@ end;
 // write the object to the backing store.
 //
 define open generic log-to-target
-    (target :: <log-target>, formatter :: <log-formatter>, object :: <object>,
-     args :: <sequence>)
+    (target :: <log-target>, level :: <log-level>, formatter :: <log-formatter>,
+     object :: <object>, args :: <sequence>)
  => ();
 
 // Override this if you want to use a normal formatter string but
@@ -451,8 +434,9 @@ define sealed class <null-log-target> (<log-target>)
 end;
 
 define sealed method log-to-target
-    (target :: <null-log-target>,
-     formatter :: <log-formatter>, format-string :: <string>, args :: <sequence>)
+    (target :: <null-log-target>, level :: <log-level>,
+     formatter :: <log-formatter>, format-string :: <string>,
+     args :: <sequence>)
  => ()
   // do nothing
 end;
@@ -485,12 +469,12 @@ define constant $stderr-log-target
   = make(<stream-log-target>, stream: *standard-error*);
 
 define method log-to-target
-    (target :: <stream-log-target>, formatter :: <log-formatter>,
+    (target :: <stream-log-target>, level :: <log-level>, formatter :: <log-formatter>,
      format-string :: <string>, args :: <sequence>)
  => ()
   let stream :: <stream> = target.target-stream;
   with-stream-locked (stream)
-    pattern-to-stream(formatter, stream);
+    pattern-to-stream(formatter, stream, level, target, format-string, args);
     write(stream, "\n");
     force-output(stream);
   end;
@@ -544,12 +528,13 @@ define method open-target-stream
 end;
 
 define method log-to-target
-    (target :: <file-log-target>,
-     formatter :: <log-formatter>, format-string :: <string>, format-args :: <sequence>)
+    (target :: <file-log-target>, level :: <log-level>,
+     formatter :: <log-formatter>, format-string :: <string>,
+     format-args :: <sequence>)
  => ()
   let stream :: <stream> = target.target-stream;
   with-stream-locked (stream)
-    pattern-to-stream(formatter, stream);
+    pattern-to-stream(formatter, stream, level, target, format-string, format-args);
     write(stream, "\n");
     force-output(stream);
   end;
@@ -626,8 +611,9 @@ define method print-object
 end method print-object;
 
 define method log-to-target
-    (target :: <rolling-file-log-target>, formatter :: <log-formatter>,
-     format-string :: <string>, format-args :: <sequence>)
+    (target :: <rolling-file-log-target>, level :: <log-level>,
+     formatter :: <log-formatter>, format-string :: <string>,
+     format-args :: <sequence>)
  => ()
   next-method();
   // todo -- calling stream-size may be very slow?  Maybe log-to-target should
@@ -686,7 +672,10 @@ end;
 // Should be called with the stream locked.
 //
 define method pattern-to-stream
-    (formatter :: <log-formatter>, stream :: <stream>) => ()
+    (formatter :: <log-formatter>, stream :: <stream>,
+     level :: <log-level>, target :: <log-target>,
+     object :: <object>, args :: <sequence>)
+ => ()
   for (item in formatter.parsed-pattern)
     if (instance?(item, <string>))
       write(stream, item);
@@ -695,7 +684,7 @@ define method pattern-to-stream
       // formatter functions to just return a string and others
       // to write to the underlying stream, so if the function
       // returns #f it means "i already did my output".
-      let result = item();
+      let result = item(level, target, object, args);
       if (result)
         write(stream, result);
       end;
@@ -788,23 +777,35 @@ define method parse-formatter-pattern
               end;
               next-char();   // eat '}'
               select (word by \=)
-                "date" => method ()
-                            pad(if (arg)
-                                  format-date(arg, current-date())
-                                else
-                                  as-iso8601-string(current-date())
-                                end)
-                          end;
-                "level" => method () pad(level-name(*current-log-level*)) end;
+                "date" =>
+                  method (#rest args)
+                    pad(if (arg)
+                          format-date(arg, current-date())
+                        else
+                          as-iso8601-string(current-date())
+                        end)
+                  end;
+                "level" =>
+                  method (level, target, object, args)
+                    pad(level-name(level))
+                  end;
                 "message" =>
-                  method ()
-                    write-message(*current-log-target*, *current-log-object*,
-                                  *current-log-args*);
+                  method (level, target, object, args)
+                    write-message(target, object, args);
                     #f
                   end;
-                "pid" => compose(pad, integer-to-string, current-process-id);
-                "millis" => compose(pad, number-to-string, elapsed-milliseconds);
-                "thread" => compose(pad, thread-name, current-thread);
+                "pid" =>
+                  method (#rest args)
+                    pad(integer-to-string(current-process-id()));
+                  end;
+                "millis" =>
+                  method (#rest args)
+                    pad(number-to-string(elapsed-milliseconds()));
+                  end;
+                "thread" =>
+                  method (#rest args)
+                    pad(thread-name(current-thread()));
+                  end;
                 otherwise =>
                   // Unknown control string.  Just output the text we've seen...
                   copy-sequence(pattern, start: start, end: index);
@@ -813,18 +814,31 @@ define method parse-formatter-pattern
       add!(result,
            select (char)
              '{' => parse-long-format-control();
-             'd' => compose(pad, as-iso8601-string, current-date);
-             'l', 'L' => method ()
-                           pad(level-name(*current-log-level*))
-                         end;
-             'm' => method ()
-                      write-message(*current-log-target*, *current-log-object*,
-                                    *current-log-args*);
-                      #f
-                    end;
-             'p' => compose(pad, integer-to-string, current-process-id);
-             'r' => compose(pad, number-to-string, elapsed-milliseconds);
-             't' => compose(pad, thread-name, current-thread);
+             'd' =>
+               method (#rest args)
+                 pad(as-iso8601-string(current-date()));
+               end;
+             'l', 'L' =>
+               method (level, target, object, args)
+                 pad(level-name(level))
+               end;
+             'm' =>
+               method (level, target, object, args)
+                 write-message(target, object, args);
+                 #f
+               end;
+             'p' =>
+               method (#rest args)
+                 pad(integer-to-string(current-process-id()));
+               end;
+             'r' =>
+               method (#rest args)
+                 pad(number-to-string(elapsed-milliseconds()));
+               end;
+             't' =>
+               method (#rest args)
+                 pad(thread-name(current-thread()));
+               end;
              '%' => pad("%");
              otherwise =>
                // Unknown control char.  Just output the text we've seen...
