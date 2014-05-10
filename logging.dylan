@@ -658,10 +658,8 @@ define open class <log-formatter> (<object>)
   slot parsed-pattern :: <sequence>;
 end class <log-formatter>;
 
-begin
-  // ignore.  leave in for debugging for now.
-  formatter-pattern;
-end;
+// Leave in for debugging for now.
+ignore(formatter-pattern);
 
 define method initialize
     (formatter :: <log-formatter>, #key pattern :: <string>)
