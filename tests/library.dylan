@@ -18,6 +18,7 @@ end;
 define module logging-test-suite
   use common-dylan;
   use date;
+  use format;
   use generic-arithmetic,
     import: { <integer> => <double-integer>, + => plus, * => mul, / => div };
   use logging;
