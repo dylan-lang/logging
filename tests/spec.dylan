@@ -6,14 +6,14 @@ Copyright: Copyright (c) 2013 Dylan Hackers. See License.txt for details.
 //
 define module-spec logging
     (setup-function: curry(ensure-directories-exist, $temp-directory))
-  open abstract class <abstract-logger> (<object>);
+  open abstract class <abstract-log> (<object>);
   sealed /* instantiable */ class <file-log-target> (<log-target>);
   open /* instantiable */ class <log-formatter> (<object>);
   open /* instantiable */ class <log-target> (<closable-object>);
-  open /* instantiable */ class <logger> (<abstract-logger>);
+  open /* instantiable */ class <log> (<abstract-log>);
   instantiable class <logging-error> (<error>, <simple-condition>);
   instantiable class <null-log-target> (<log-target>);
-  sealed class <placeholder-logger> (<abstract-logger>);
+  sealed class <placeholder-log> (<abstract-log>);
   sealed class <rolling-file-log-target> (<file-log-target>);
   class <stream-log-target> (<log-target>);
 
@@ -39,27 +39,27 @@ define module-spec logging
   constant $stderr-log-target :: <object>;
   constant $stdout-log-target :: <object>;
 
-  function add-target (<logger>, <log-target>) => ();
-  function get-logger (<string>) => (false-or(<abstract-logger>));
-  function get-root-logger () => (<logger>);
+  function add-target (<log>, <log-target>) => ();
+  function get-log (<string>) => (false-or(<abstract-log>));
+  function get-root-log () => (<log>);
   function level-name (<log-level>) => (<string>);
-  function log-debug-if (<object>, <abstract-logger>, <string>) => ();
-  function log-level-setter (<log-level>, <logger>) => (<log-level>);
-  function log-level (<logger>) => (<log-level>);
-  function log-message (<log-level>, <logger>, <object>) => ();
+  function log-debug-if (<object>, <abstract-log>, <string>) => ();
+  function log-level-setter (<log-level>, <log>) => (<log-level>);
+  function log-level (<log>) => (<log-level>);
+  function log-message (<log-level>, <log>, <object>) => ();
   function log-to-target (<log-target>, <log-level>, <log-formatter>, <object>, <sequence>) => ();
-  function logger-additive?-setter (<boolean>, <abstract-logger>) => (<boolean>);
-  function logger-additive? (<abstract-logger>) => (<boolean>);
-  function logger-enabled?-setter (<boolean>, <abstract-logger>) => (<boolean>);
-  function logger-enabled? (<abstract-logger>) => (<boolean>);
-  function logger-name (<abstract-logger>) => (<string>);
+  function log-additive?-setter (<boolean>, <abstract-log>) => (<boolean>);
+  function log-additive? (<abstract-log>) => (<boolean>);
+  function log-enabled?-setter (<boolean>, <abstract-log>) => (<boolean>);
+  function log-enabled? (<abstract-log>) => (<boolean>);
+  function log-name (<abstract-log>) => (<string>);
   function pattern-to-stream (<log-formatter>, <stream>, <log-level>, <log-target>, <object>, <sequence>) => ();
-  function remove-target (<logger>, <log-target>) => ();
+  function remove-target (<log>, <log-target>) => ();
   function write-message (<log-target>, <object>, <sequence>) => ();
 end module-spec logging;
 
-define logging class-test <abstract-logger> ()
-end class-test <abstract-logger>;
+define logging class-test <abstract-log> ()
+end class-test <abstract-log>;
 
 define logging class-test <debug-level> ()
 end class-test <debug-level>;
@@ -82,15 +82,15 @@ end class-test <log-formatter>;
 define logging class-test <log-level> ()
 end class-test <log-level>;
 
-define logging class-test <placeholder-logger> ()
-end class-test <placeholder-logger>;
+define logging class-test <placeholder-log> ()
+end class-test <placeholder-log>;
 
-define logging class-test <logger> ()
-  check-no-errors("make a logger with a <string> formatter",
-                  make(<logger>,
-                       name: "<logger>-test",
+define logging class-test <log> ()
+  check-no-errors("make a log with a <string> formatter",
+                  make(<log>,
+                       name: "<log>-test",
                        formatter: "foo"));
-end class-test <logger>;
+end class-test <log>;
 
 define logging class-test <logging-error> ()
 end class-test <logging-error>;
@@ -113,7 +113,7 @@ end constant-test $stdout-log-target;
 define logging class-test <file-log-target> ()
   let locator = temp-locator("file-log-target-test.log");
   let target = make(<file-log-target>, pathname: locator);
-  let log = make(<logger>,
+  let log = make(<log>,
                  name: "file-log-target-test",
                  targets: list(target),
                  formatter: $message-only-formatter);
@@ -134,18 +134,18 @@ define logging class-test <rolling-file-log-target> ()
   let target = make(<rolling-file-log-target>,
                     pathname: locator,
                     max-size: 10);
-  let logger = make(<logger>,
-                    name: "rolling-file-test",
-                    targets: list(target),
-                    formatter: $message-only-formatter);
+  let log = make(<log>,
+                 name: "rolling-file-test",
+                 targets: list(target),
+                 formatter: $message-only-formatter);
   // I figure this could log 8 or 9 characters, including CR and/or LF.
-  log-info(logger, "1234567");
+  log-info(log, "1234567");
   close(target);  // can't read file on Windows unless it's closed
   check-equal("log doesn't roll when below max size",
               file-contents(locator),
               "1234567\n");
   open-target-stream(target);
-  log-info(logger, "890");
+  log-info(log, "890");
   close(target);  // can't read file on Windows unless it's closed
   check-equal("log rolls when max size exceeded",
               file-contents(locator),
@@ -196,11 +196,11 @@ end function-test current-log-args;
 define logging function-test current-log-object ()
 end function-test current-log-object;
 
-define logging function-test get-logger ()
-end function-test get-logger;
+define logging function-test get-log ()
+end function-test get-log;
 
-define logging function-test get-root-logger ()
-end function-test get-root-logger;
+define logging function-test get-root-log ()
+end function-test get-root-log;
 
 define logging function-test level-name ()
 end function-test level-name;
@@ -220,57 +220,57 @@ end function-test log-message;
 define logging function-test log-to-target ()
 end function-test log-to-target;
 
-define logging function-test logger-additive? ()
-  // Make sure non-additive logger DOESN'T pass it on to parent.
-  let logger1 = make-test-logger("aaa");
-  let logger2 = make-test-logger("aaa.bbb", additive?: #f);
-  log-error(logger2, "xxx");
+define logging function-test log-additive? ()
+  // Make sure non-additive log DOESN'T pass it on to parent.
+  let log1 = make-test-log("aaa");
+  let log2 = make-test-log("aaa.bbb", additive?: #f);
+  log-error(log2, "xxx");
   check-equal("non-additivity respected for target1",
-              stream-contents(logger1.log-targets[0].target-stream),
+              stream-contents(log1.log-targets[0].target-stream),
               "");
   check-equal("non-additivity respected for target2",
-              stream-contents(logger2.log-targets[0].target-stream),
+              stream-contents(log2.log-targets[0].target-stream),
               "xxx\n");
 
-  // Make sure additive logger DOES pass it on to parent.
-  let logger1 = make-test-logger("xxx");
-  let logger2 = make-test-logger("xxx.yyy", additive?: #t);
-  log-error(logger2, "xxx");
+  // Make sure additive log DOES pass it on to parent.
+  let log1 = make-test-log("xxx");
+  let log2 = make-test-log("xxx.yyy", additive?: #t);
+  log-error(log2, "xxx");
   check-equal("additivity respected for target1",
-              stream-contents(logger1.log-targets[0].target-stream),
+              stream-contents(log1.log-targets[0].target-stream),
               "xxx\n");
   check-equal("additivity respected for target2",
-              stream-contents(logger2.log-targets[0].target-stream),
+              stream-contents(log2.log-targets[0].target-stream),
               "xxx\n");
-end function-test logger-additive?;
+end function-test log-additive?;
 
-define logging function-test logger-additive?-setter ()
-end function-test logger-additive?-setter;
+define logging function-test log-additive?-setter ()
+end function-test log-additive?-setter;
 
-define logging function-test logger-enabled? ()
-end function-test logger-enabled?;
+define logging function-test log-enabled? ()
+end function-test log-enabled?;
 
-define logging function-test logger-enabled?-setter ()
-  // Make sure disabled logger doesn't do output
-  let logger = make-test-logger("logger-enabled-test");
-  logger-enabled?(logger) := #f;
-  log-info(logger, "xxx");
-  check-equal("disabled logger does no output",
-              stream-contents(logger.log-targets[0].target-stream),
+define logging function-test log-enabled?-setter ()
+  // Make sure disabled log doesn't do output
+  let log = make-test-log("log-enabled-test");
+  log-enabled?(log) := #f;
+  log-info(log, "xxx");
+  check-equal("disabled log does no output",
+              stream-contents(log.log-targets[0].target-stream),
               "");
 
-  // Make sure disabled logger still respects additivity.
-  let parent = make-test-logger("parent");
-  let child = make-test-logger("parent.child");
-  logger-enabled?(child) := #f;
+  // Make sure disabled log still respects additivity.
+  let parent = make-test-log("parent");
+  let child = make-test-log("parent.child");
+  log-enabled?(child) := #f;
   log-info(child, "xxx");
-  check-equal("additivity respected for disabled logger",
+  check-equal("additivity respected for disabled log",
               stream-contents(parent.log-targets[0].target-stream),
               "xxx\n");
-end function-test logger-enabled?-setter;
+end function-test log-enabled?-setter;
 
-define logging function-test logger-name ()
-end function-test logger-name;
+define logging function-test log-name ()
+end function-test log-name;
 
 define logging function-test pattern-to-stream ()
 end function-test pattern-to-stream;

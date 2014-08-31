@@ -43,12 +43,12 @@ end;
 define constant $message-only-formatter
   = make(<log-formatter>, pattern: "%{message}");
 
-// Make the most common type of logger for testing.
+// Make the most common type of log for testing.
 //
-define function make-test-logger
+define function make-test-log
     (name :: <string>, #rest init-args)
- => (logger :: <logger>)
-  apply(make, <logger>,
+ => (log :: <log>)
+  apply(make, <log>,
         name: name,
         targets: list(make(<string-log-target>)),
         formatter: $message-only-formatter,
@@ -62,25 +62,25 @@ define constant $log-functions
   = list(log-trace, log-debug, log-info, log-warning, log-error);
 
 // given = error    pos = 4
-// logger = trace   idx = 0           expected = xxx\n
+// log = trace   idx = 0           expected = xxx\n
 define function test-log-level
-    (logger-level :: <log-level>)
+    (log-level :: <log-level>)
   reset-logging();
-  let logger-priority = position($log-levels, logger-level);
+  let log-priority = position($log-levels, log-level);
   for (log-fn in $log-functions,
        current-level in $log-levels,
        current-priority from 0)
     let target = make(<string-log-target>);
-    let logger = make(<logger>,
-                      name: fmt("logger.%d", current-priority),
-                      targets: list(target),
-                      level: logger-level,
-                      formatter: $message-only-formatter);
-    log-fn(logger, "xxx");
-    let expected = if (current-priority >= logger-priority) "xxx\n" else "" end;
+    let log = make(<log>,
+                   name: fmt("log.%d", current-priority),
+                   targets: list(target),
+                   level: log-level,
+                   formatter: $message-only-formatter);
+    log-fn(log, "xxx");
+    let expected = if (current-priority >= log-priority) "xxx\n" else "" end;
     let actual = stream-contents(target.target-stream);
     check-equal(fmt("Log output (%=) matches expected (%=). Given level %s, "
-                    "logger level %s", actual, expected, logger-level, current-level),
+                    "log level %s", actual, expected, log-level, current-level),
                 expected, actual);
   end;
 end function test-log-level;
@@ -100,14 +100,14 @@ define test test-process-id ()
   for (pattern in #("%{pid}", "%p"),
        i from 1)
     let target = make(<string-log-target>);
-    let logger = make(<logger>,
-                      name: format-to-string("test-process-id-%s", i),
-                      targets: list(target),
-                      formatter: make(<log-formatter>, pattern: pattern),
-                      level: $trace-level);
-    log-info(logger, "this is ignored");
+    let log = make(<log>,
+                   name: format-to-string("test-process-id-%s", i),
+                   targets: list(target),
+                   formatter: make(<log-formatter>, pattern: pattern),
+                   level: $trace-level);
+    log-info(log, "this is ignored");
     check-equal("log stream contains process id only",
                 stream-contents(target.target-stream),
                 format-to-string("%d\n", current-process-id()));
   end;
-end;
+end test test-process-id;
