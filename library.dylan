@@ -19,22 +19,20 @@ end library logging;
 
 define module logging
   create
-    // Loggers
-    // Maybe rename to <log> and log-*
-    <logger>,
+    <log>,
     log-formatter,
     log-formatter-setter,
     log-level,
     log-level-setter,
     log-level-applicable?,
     log-targets,
-    logger-name,
-    logger-additive?,
-    logger-additive?-setter,
-    logger-enabled?,
-    logger-enabled?-setter,
-    get-logger,
-    get-root-logger,
+    log-name,
+    log-additive?,
+    log-additive?-setter,
+    log-enabled?,
+    log-enabled?-setter,
+    get-log,
+    get-root-log,
     add-target,
     remove-all-targets,
     remove-target,
@@ -77,8 +75,8 @@ define module logging
     <logging-error>,
 
     // For building your own logging classes
-    <abstract-logger>,
-    <placeholder-logger>,
+    <abstract-log>,
+    <placeholder-log>,
     log-to-target,
     log-message,
     pattern-to-stream,

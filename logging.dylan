@@ -56,10 +56,10 @@ idea -- It is useful for general purpose libraries (e.g., an XML parser)
         to do logging.  You normally want this logging disabled.  A calling
         library will probably want to turn on the XML parser's logging for
         specific threads, for debugging purposes.  The XML parser can use
-        an exported thread variable to hold its debug logger and callers can
-        rebind that to the logger they want.  (Not really an issue for this
+        an exported thread variable to hold its debug log and callers can
+        rebind that to the log they want.  (Not really an issue for this
         logging library to address...more of a suggestion for something to
-        add to future documentation.)  Just enabling the XML parser's logger
+        add to future documentation.)  Just enabling the XML parser's log
         won't always be what users want because it will enable logging in
         all threads.
 
@@ -86,77 +86,77 @@ todo -- See http://pypi.python.org/pypi/LogPy/1.0 for some (well, at least one)
 
 
 ///////////////////////////////////////////////////////////
-//// Loggers
+//// Log classes
 ////
 
-define variable $root-logger :: false-or(<logger>) = #f;
+define variable $root-log :: false-or(<log>) = #f;
 
-define sealed generic logger-name
-    (logger :: <abstract-logger>) => (name :: <string>);
-define sealed generic logger-parent
-    (logger :: <abstract-logger>) => (parent :: false-or(<abstract-logger>));
-define sealed generic logger-children
-    (logger :: <abstract-logger>) => (children :: <string-table>);
-define sealed generic logger-additive?
-    (logger :: <abstract-logger>) => (additive? :: <boolean>);
-define sealed generic logger-enabled?
-    (logger :: <abstract-logger>) => (enabled? :: <boolean>);
+define sealed generic log-name
+    (log :: <abstract-log>) => (name :: <string>);
+define sealed generic log-parent
+    (log :: <abstract-log>) => (parent :: false-or(<abstract-log>));
+define sealed generic log-children
+    (log :: <abstract-log>) => (children :: <string-table>);
+define sealed generic log-additive?
+    (log :: <abstract-log>) => (additive? :: <boolean>);
+define sealed generic log-enabled?
+    (log :: <abstract-log>) => (enabled? :: <boolean>);
 
-define abstract class <abstract-logger> (<object>)
-  // A dotted path name.  All parent loggers in the path must already exist.
-  constant slot logger-name :: <string>,
+define abstract class <abstract-log> (<object>)
+  // A dotted path name.  All parent logs in the path must already exist.
+  constant slot log-name :: <string>,
     required-init-keyword: name:;
 
-  slot logger-parent :: false-or(<abstract-logger>) = #f,
+  slot log-parent :: false-or(<abstract-log>) = #f,
     init-keyword: parent:;
 
-  constant slot logger-children :: <string-table> = make(<string-table>),
+  constant slot log-children :: <string-table> = make(<string-table>),
     init-keyword: children:;
 
-  // If this is #t then log messages sent to this logger will be passed up
-  // the hierarchy to parent loggers as well, until it reaches a logger
+  // If this is #t then log messages sent to this log will be passed up
+  // the hierarchy to parent logs as well, until it reaches a log
   // whose additivity is #f.  Terminology stolen from log4j.
   //
-  slot logger-additive? :: <boolean> = #t,
+  slot log-additive? :: <boolean> = #t,
     init-keyword: additive?:;
 
-  // If disabled, no messages will be logged to this logger's targets.
-  // The value of logger-additive? will still be respected.  In other
-  // words, logging to a disabled logger will still log to ancestor
-  // loggers if they are themselves enabled.
+  // If disabled, no messages will be logged to this log's targets.
+  // The value of log-additive? will still be respected.  In other
+  // words, logging to a disabled log will still log to ancestor
+  // logs if they are themselves enabled.
   //
-  slot logger-enabled? :: <boolean> = #t,
+  slot log-enabled? :: <boolean> = #t,
     init-keyword: enabled?:;
 
-end class <abstract-logger>;
+end class <abstract-log>;
 
 define method initialize
-    (logger :: <abstract-logger>, #key name :: <string>)
+    (log :: <abstract-log>, #key name :: <string>)
   next-method();
-  if ($root-logger)
-    add-logger($root-logger, logger, as(<list>, split(name, '.')), name);
+  if ($root-log)
+    add-log($root-log, log, as(<list>, split(name, '.')), name);
   end;
 end method initialize;
 
 define function local-name
-    (logger :: <abstract-logger>)
+    (log :: <abstract-log>)
  => (local-name :: <string>)
-  last(split(logger.logger-name, '.'))
+  last(split(log.log-name, '.'))
 end;
 
-// Instances of this class are used as placeholders in the logger hierarchy when
-// a logger is created before its parents are created.  i.e., if the first logger
-// created is named "x.y.z" then both x and x.y will be <placeholder-logger>s.
-// (If x.y is later created as a real logger then the placeholder will be replaced.)
+// Instances of this class are used as placeholders in the log hierarchy when
+// a log is created before its parents are created.  i.e., if the first log
+// created is named "x.y.z" then both x and x.y will be <placeholder-log>s.
+// (If x.y is later created as a real log then the placeholder will be replaced.)
 //
-define open class <placeholder-logger> (<abstract-logger>)
+define open class <placeholder-log> (<abstract-log>)
 end;
 
-define sealed generic log-level (logger :: <logger>) => (level :: <log-level>);
-define sealed generic log-targets (logger :: <logger>) => (targets :: <vector>);
-define sealed generic log-formatter (logger :: <logger>) => (formatter :: <log-formatter>);
+define sealed generic log-level (log :: <log>) => (level :: <log-level>);
+define sealed generic log-targets (log :: <log>) => (targets :: <vector>);
+define sealed generic log-formatter (log :: <log>) => (formatter :: <log-formatter>);
 
-define open class <logger> (<abstract-logger>)
+define open class <log> (<abstract-log>)
   slot log-level :: <log-level> = $trace-level,
     init-keyword: level:;
 
@@ -166,13 +166,13 @@ define open class <logger> (<abstract-logger>)
   slot log-formatter :: <log-formatter> = $default-log-formatter,
     init-keyword: formatter:;
 
-end class <logger>;
+end class <log>;
 
 define method make
-    (class :: subclass(<logger>),
+    (class :: subclass(<log>),
      #rest args,
      #key formatter, targets :: false-or(<sequence>))
- => (logger)
+ => (log)
   // Formatter may be specified as a string for convenience.
   if (instance?(formatter, <string>))
     formatter := make(<log-formatter>, pattern: formatter);
@@ -187,37 +187,37 @@ define method make
 end method make;
 
 define method print-object
-    (logger :: <logger>, stream :: <stream>)
+    (log :: <log>, stream :: <stream>)
  => ()
   if (*print-escape?*)
     next-method();
   else
     format(stream, "%s (%sadditive, level: %s, targets: %s)",
-           logger.logger-name,
-           if (logger.logger-additive?) "" else "non-" end,
-           logger.log-level.level-name,
-           if (empty?(logger.log-targets))
+           log.log-name,
+           if (log.log-additive?) "" else "non-" end,
+           log.log-level.level-name,
+           if (empty?(log.log-targets))
              "None"
            else
-             join(logger.log-targets, ", ", key: curry(format-to-string, "%s"))
+             join(log.log-targets, ", ", key: curry(format-to-string, "%s"))
            end);
   end;
 end method print-object;
 
 define method add-target
-    (logger :: <logger>, target :: <log-target>) => ()
-  add-new!(logger.log-targets, target)
+    (log :: <log>, target :: <log-target>) => ()
+  add-new!(log.log-targets, target)
 end;
 
 define method remove-target
-    (logger :: <logger>, target :: <log-target>) => ()
-  remove!(logger.log-targets, target);
+    (log :: <log>, target :: <log-target>) => ()
+  remove!(log.log-targets, target);
 end;
 
 define method remove-all-targets
-    (logger :: <logger>) => ()
-  for (target in logger.log-targets)
-    remove-target(logger, target)
+    (log :: <log>) => ()
+  for (target in log.log-targets)
+    remove-target(log, target)
   end;
 end;
 
@@ -231,66 +231,66 @@ define function logging-error
               format-arguments: args))
 end;
 
-define function get-root-logger
-    () => (logger :: <logger>)
-  $root-logger
+define function get-root-log
+    () => (log :: <log>)
+  $root-log
 end;
 
-define function get-logger
-    (name :: <string>) => (logger :: false-or(<abstract-logger>))
-  %get-logger($root-logger, as(<list>, split(name, '.')), name)
+define function get-log
+    (name :: <string>) => (log :: false-or(<abstract-log>))
+  %get-log($root-log, as(<list>, split(name, '.')), name)
 end;
 
-define method %get-logger
-    (logger :: <abstract-logger>, path :: <list>, original-name :: <string>)
+define method %get-log
+    (log :: <abstract-log>, path :: <list>, original-name :: <string>)
   if (empty?(path))
-    logger
+    log
   else
-    let child = element(logger.logger-children, first(path), default: #f);
-    child & %get-logger(child, path.tail, original-name)
+    let child = element(log.log-children, first(path), default: #f);
+    child & %get-log(child, path.tail, original-name)
   end
-end method %get-logger;
+end method %get-log;
 
-define method %get-logger
-    (logger :: <placeholder-logger>, path :: <list>, original-name :: <string>)
+define method %get-log
+    (log :: <placeholder-log>, path :: <list>, original-name :: <string>)
   ~empty?(path) & next-method()
-end method %get-logger;
+end method %get-log;
 
-define method %get-logger
-    (logger == #f, path :: <list>, original-name :: <string>)
-  logging-error("Logger not found: %s", original-name);
-end method %get-logger;
+define method %get-log
+    (log == #f, path :: <list>, original-name :: <string>)
+  logging-error("Log not found: %s", original-name);
+end method %get-log;
 
 
-define function add-logger
-    (parent :: <abstract-logger>, new :: <abstract-logger>, path :: <list>,
+define function add-log
+    (parent :: <abstract-log>, new :: <abstract-log>, path :: <list>,
      original-name :: <string>)
   let name :: <string> = first(path);
-  let child = element(parent.logger-children, name, default: #f);
+  let child = element(parent.log-children, name, default: #f);
   if (path.size == 1)
     if (child)
-      if (instance?(child, <placeholder-logger>))
-        // Copy the placeholder's children into the new logger that
+      if (instance?(child, <placeholder-log>))
+        // Copy the placeholder's children into the new log that
         // is replacing it.
-        for (grandchild in child.logger-children)
-          new.logger-children[local-name(grandchild)] := grandchild;
-          grandchild.logger-parent := new;
+        for (grandchild in child.log-children)
+          new.log-children[local-name(grandchild)] := grandchild;
+          grandchild.log-parent := new;
         end;
       else
-        logging-error("Invalid logger name, %s.  A child logger named %s "
+        logging-error("Invalid log name, %s.  A child log named %s "
                       "already exists.", original-name, name);
       end;
     end;
-    parent.logger-children[name] := new;
-    new.logger-parent := parent;
+    parent.log-children[name] := new;
+    new.log-parent := parent;
   else
     if (~child)
-      child := make(<placeholder-logger>, name: name, parent: parent);
-      parent.logger-children[name] := child;
+      child := make(<placeholder-log>, name: name, parent: parent);
+      parent.log-children[name] := child;
     end;
-    add-logger(child, new, path.tail, original-name);
+    add-log(child, new, path.tail, original-name);
   end;
-end function add-logger;
+end function add-log;
 
 
 
@@ -334,9 +334,9 @@ define constant $warn-level = make(<warn-level>);
 define constant $error-level = make(<error-level>);
 
 define method log-level-applicable?
-    (given-level :: <log-level>, logger-level :: <log-level>)
+    (given-level :: <log-level>, level :: <log-level>)
  => (applicable? :: <boolean>)
-  instance?(given-level, logger-level.object-class)
+  instance?(given-level, level.object-class)
 end;
 
 
@@ -350,23 +350,23 @@ end;
 // the first argument.
 //
 define method log-message
-    (given-level :: <log-level>, logger :: <logger>, object :: <object>, #rest args)
+    (given-level :: <log-level>, log :: <log>, object :: <object>, #rest args)
  => ()
-  if (logger.logger-enabled?  & log-level-applicable?(given-level, logger.log-level))
-    for (target :: <log-target> in logger.log-targets)
-      log-to-target(target, given-level, logger.log-formatter, object, args);
+  if (log.log-enabled?  & log-level-applicable?(given-level, log.log-level))
+    for (target :: <log-target> in log.log-targets)
+      log-to-target(target, given-level, log.log-formatter, object, args);
     end;
   end;
-  if (logger.logger-additive?)
-    apply(log-message, given-level, logger.logger-parent, object, args);
+  if (log.log-additive?)
+    apply(log-message, given-level, log.log-parent, object, args);
   end;
 end method log-message;
 
 define method log-message
-    (given-level :: <log-level>, logger :: <placeholder-logger>, object :: <object>,
+    (given-level :: <log-level>, log :: <placeholder-log>, object :: <object>,
      #rest args)
-  if (logger.logger-additive?)
-    apply(log-message, given-level, logger.logger-parent, object, args)
+  if (log.log-additive?)
+    apply(log-message, given-level, log.log-parent, object, args)
   end;
 end;
 
@@ -380,9 +380,9 @@ define constant log-trace = curry(log-message, $trace-level);
 define constant log-debug = curry(log-message, $debug-level);
 
 define inline function log-debug-if
-    (test, logger :: <abstract-logger>, object, #rest args)
+    (test, log :: <abstract-log>, object, #rest args)
   if (test)
-    apply(log-debug, logger, object, args);
+    apply(log-debug, log, object, args);
   end;
 end;
 
@@ -870,7 +870,7 @@ end function elapsed-milliseconds;
 define function reset-logging
     ()
   // maybe should close existing log targets?
-  $root-logger := make(<logger>, name: "root", additive?: #f, enabled?: #f);
+  $root-log := make(<log>, name: "root", additive?: #f, enabled?: #f);
 end;
 
 /////////////////////////////////////////////////////
