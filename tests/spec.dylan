@@ -2,62 +2,6 @@ Module: logging-test-suite
 Author: Carl L Gay
 Copyright: Copyright (c) 2013 Dylan Hackers. See License.txt for details.
 
-// Defines suite logging-module-test-suite.
-//
-define module-spec logging
-    (setup-function: curry(ensure-directories-exist, $temp-directory))
-  open abstract class <abstract-log> (<object>);
-  sealed /* instantiable */ class <file-log-target> (<log-target>);
-  open /* instantiable */ class <log-formatter> (<object>);
-  open /* instantiable */ class <log-target> (<closable-object>);
-  open /* instantiable */ class <log> (<abstract-log>);
-  instantiable class <logging-error> (<error>, <simple-condition>);
-  instantiable class <null-log-target> (<log-target>);
-  sealed class <placeholder-log> (<abstract-log>);
-  sealed class <rolling-file-log-target> (<file-log-target>);
-  class <stream-log-target> (<log-target>);
-
-  class <log-level> (<object>);
-  instantiable class <debug-level> (<trace-level>);
-  instantiable class <error-level> (<warn-level>);
-  instantiable class <info-level> (<debug-level>);
-  instantiable class <trace-level> (<log-level>);
-  instantiable class <warn-level> (<info-level>);
-
-  constant $debug-level :: <object>;
-  constant $error-level :: <object>;
-  constant $info-level :: <object>;
-  constant $trace-level :: <object>;
-  constant $warn-level :: <object>;
-
-  constant log-debug :: <object>;
-  constant log-error :: <object>;
-  constant log-info :: <object>;
-  constant log-trace :: <object>;
-  constant log-warning :: <object>;
-
-  constant $stderr-log-target :: <object>;
-  constant $stdout-log-target :: <object>;
-
-  function add-target (<log>, <log-target>) => ();
-  function get-log (<string>) => (false-or(<abstract-log>));
-  function get-root-log () => (<log>);
-  function level-name (<log-level>) => (<string>);
-  function log-debug-if (<object>, <abstract-log>, <string>) => ();
-  function log-level-setter (<log-level>, <log>) => (<log-level>);
-  function log-level (<log>) => (<log-level>);
-  function log-message (<log-level>, <log>, <object>) => ();
-  function log-to-target (<log-target>, <log-level>, <log-formatter>, <object>, <sequence>) => ();
-  function log-additive?-setter (<boolean>, <abstract-log>) => (<boolean>);
-  function log-additive? (<abstract-log>) => (<boolean>);
-  function log-enabled?-setter (<boolean>, <abstract-log>) => (<boolean>);
-  function log-enabled? (<abstract-log>) => (<boolean>);
-  function log-name (<abstract-log>) => (<string>);
-  function pattern-to-stream (<log-formatter>, <stream>, <log-level>, <log-target>, <object>, <sequence>) => ();
-  function remove-target (<log>, <log-target>) => ();
-  function write-message (<log-target>, <object>, <sequence>) => ();
-end module-spec logging;
-
 define logging class-test <abstract-log> ()
 end class-test <abstract-log>;
 
@@ -190,12 +134,6 @@ end constant-test log-warning;
 define logging function-test add-target ()
 end function-test add-target;
 
-define logging function-test current-log-args ()
-end function-test current-log-args;
-
-define logging function-test current-log-object ()
-end function-test current-log-object;
-
 define logging function-test get-log ()
 end function-test get-log;
 
@@ -280,6 +218,62 @@ end function-test remove-target;
 
 define logging function-test write-message ()
 end function-test write-message;
+
+// Defines suite logging-module-test-suite.
+//
+define module-spec logging
+    (setup-function: curry(ensure-directories-exist, $temp-directory))
+  open abstract class <abstract-log> (<object>);
+  sealed /* instantiable */ class <file-log-target> (<log-target>);
+  open /* instantiable */ class <log-formatter> (<object>);
+  open /* instantiable */ class <log-target> (<closable-object>);
+  open /* instantiable */ class <log> (<abstract-log>);
+  instantiable class <logging-error> (<error>, <simple-condition>);
+  instantiable class <null-log-target> (<log-target>);
+  sealed class <placeholder-log> (<abstract-log>);
+  sealed class <rolling-file-log-target> (<file-log-target>);
+  class <stream-log-target> (<log-target>);
+
+  class <log-level> (<object>);
+  instantiable class <debug-level> (<trace-level>);
+  instantiable class <error-level> (<warn-level>);
+  instantiable class <info-level> (<debug-level>);
+  instantiable class <trace-level> (<log-level>);
+  instantiable class <warn-level> (<info-level>);
+
+  constant $debug-level :: <object>;
+  constant $error-level :: <object>;
+  constant $info-level :: <object>;
+  constant $trace-level :: <object>;
+  constant $warn-level :: <object>;
+
+  constant log-debug :: <object>;
+  constant log-error :: <object>;
+  constant log-info :: <object>;
+  constant log-trace :: <object>;
+  constant log-warning :: <object>;
+
+  constant $stderr-log-target :: <object>;
+  constant $stdout-log-target :: <object>;
+
+  function add-target (<log>, <log-target>) => ();
+  function get-log (<string>) => (false-or(<abstract-log>));
+  function get-root-log () => (<log>);
+  function level-name (<log-level>) => (<string>);
+  function log-debug-if (<object>, <abstract-log>, <string>) => ();
+  function log-level-setter (<log-level>, <log>) => (<log-level>);
+  function log-level (<log>) => (<log-level>);
+  function log-message (<log-level>, <log>, <object>) => ();
+  function log-to-target (<log-target>, <log-level>, <log-formatter>, <object>, <sequence>) => ();
+  function log-additive?-setter (<boolean>, <abstract-log>) => (<boolean>);
+  function log-additive? (<abstract-log>) => (<boolean>);
+  function log-enabled?-setter (<boolean>, <abstract-log>) => (<boolean>);
+  function log-enabled? (<abstract-log>) => (<boolean>);
+  function log-name (<abstract-log>) => (<string>);
+  function pattern-to-stream (<log-formatter>, <stream>, <log-level>, <log-target>, <object>, <sequence>) => ();
+  function remove-target (<log>, <log-target>) => ();
+  function write-message (<log-target>, <object>, <sequence>) => ();
+end module-spec logging;
 
 // Defines constant logging-test-suite
 //
