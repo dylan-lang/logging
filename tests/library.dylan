@@ -10,10 +10,7 @@ define library logging-test-suite
   use system,
     import: { date, file-system, locators, operating-system };
   use testworks;
-  use testworks-specs;
-
-  export logging-test-suite;
-end;
+end library;
 
 define module logging-test-suite
   use common-dylan;
@@ -24,13 +21,10 @@ define module logging-test-suite
   use logging;
   use logging-impl;
   use streams;
-  use file-system;
-    //import: { <pathname>, with-open-file };
+  use file-system,
+    import: { delete-file, ensure-directories-exist, file-exists?, <pathname>, with-open-file };
   use locators;
   use operating-system,
     import: { current-process-id };
   use testworks;
-  use testworks-specs;
-
-  export logging-test-suite;
-end;
+end module;
