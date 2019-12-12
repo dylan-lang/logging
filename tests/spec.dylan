@@ -1,60 +1,59 @@
 Module: logging-test-suite
-Author: Carl L Gay
 Copyright: Copyright (c) 2013 Dylan Hackers. See License.txt for details.
 
-define logging class-test <abstract-log> ()
-end class-test <abstract-log>;
+define test test-<abstract-log> ()
+end test;
 
-define logging class-test <debug-level> ()
-end class-test <debug-level>;
+define test test-<debug-level> ()
+end test;
 
-define logging class-test <error-level> ()
-end class-test <error-level>;
+define test test-<error-level> ()
+end test;
 
-define logging class-test <info-level> ()
-end class-test <info-level>;
+define test test-<info-level> ()
+end test;
 
-define logging class-test <trace-level> ()
-end class-test <trace-level>;
+define test test-<trace-level> ()
+end test;
 
-define logging class-test <warn-level> ()
-end class-test <warn-level>;
+define test test-<warn-level> ()
+end test;
 
-define logging class-test <log-formatter> ()
-end class-test <log-formatter>;
+define test test-<log-formatter> ()
+end test;
 
-define logging class-test <log-level> ()
-end class-test <log-level>;
+define test test-<log-level> ()
+end test;
 
-define logging class-test <placeholder-log> ()
-end class-test <placeholder-log>;
+define test test-<placeholder-log> ()
+end test;
 
-define logging class-test <log> ()
+define test test-<log> ()
   check-no-errors("make a log with a <string> formatter",
                   make(<log>,
                        name: "<log>-test",
                        formatter: "foo"));
-end class-test <log>;
+end test;
 
-define logging class-test <logging-error> ()
-end class-test <logging-error>;
+define test test-<logging-error> ()
+end test;
 
-define logging class-test <log-target> ()
-end class-test <log-target>;
+define test test-<log-target> ()
+end test;
 
-define logging class-test <null-log-target> ()
-end class-test <null-log-target>;
+define test test-<null-log-target> ()
+end test;
 
-define logging class-test <stream-log-target> ()
-end class-test <stream-log-target>;
+define test test-<stream-log-target> ()
+end test;
 
-define logging constant-test $stderr-log-target ()
-end constant-test $stderr-log-target;
+define test test-$stderr-log-target ()
+end test;
 
-define logging constant-test $stdout-log-target ()
-end constant-test $stdout-log-target;
+define test test-$stdout-log-target ()
+end test;
 
-define logging class-test <file-log-target> ()
+define test test-<file-log-target> ()
   let locator = temp-locator("file-log-target-test.log");
   let target = make(<file-log-target>, pathname: locator);
   let log = make(<log>,
@@ -67,9 +66,9 @@ define logging class-test <file-log-target> ()
     check-equal("file-log-target has expected contents",
                 read-to-end(stream), "test\n");
   end;
-end class-test <file-log-target>;
+end test;
 
-define logging class-test <rolling-file-log-target> ()
+define test test-<rolling-file-log-target> ()
   // Make sure the file rolls when it reaches max size
   let locator = temp-locator("rolling-log-file.log");
   if (file-exists?(locator))
@@ -94,71 +93,71 @@ define logging class-test <rolling-file-log-target> ()
   check-equal("log rolls when max size exceeded",
               file-contents(locator),
               "");
-end class-test <rolling-file-log-target>;
+end test;
 
-define logging constant-test $debug-level ()
-end constant-test $debug-level;
+define test test-$debug-level ()
+end test;
 
-define logging constant-test $error-level ()
-end constant-test $error-level;
+define test test-$error-level ()
+end test;
 
-define logging constant-test $info-level ()
-end constant-test $info-level;
+define test test-$info-level ()
+end test;
 
-define logging constant-test $trace-level ()
-end constant-test $trace-level;
+define test test-$trace-level ()
+end test;
 
-define logging constant-test $warn-level ()
-end constant-test $warn-level;
+define test test-$warn-level ()
+end test;
 
-define logging constant-test log-debug ()
-    test-log-level($debug-level);
-end constant-test log-debug;
+define test test-log-debug ()
+    do-test-log-level($debug-level);
+end test;
 
-define logging constant-test log-error ()
-    test-log-level($error-level);
-end constant-test log-error;
+define test test-log-error ()
+    do-test-log-level($error-level);
+end test;
 
-define logging constant-test log-info ()
-    test-log-level($info-level);
-end constant-test log-info;
+define test test-log-info ()
+    do-test-log-level($info-level);
+end test;
 
-define logging constant-test log-trace ()
-    test-log-level($trace-level);
-end constant-test log-trace;
+define test test-log-trace ()
+    do-test-log-level($trace-level);
+end test;
 
-define logging constant-test log-warning ()
-    test-log-level($warn-level);
-end constant-test log-warning;
+define test test-log-warning ()
+    do-test-log-level($warn-level);
+end test;
 
-define logging function-test add-target ()
-end function-test add-target;
+define test test-add-target ()
+end test;
 
-define logging function-test get-log ()
-end function-test get-log;
+define test test-get-log ()
+end test;
 
-define logging function-test get-root-log ()
-end function-test get-root-log;
+define test test-get-root-log ()
+end test;
 
-define logging function-test level-name ()
-end function-test level-name;
+define test test-level-name ()
+end test;
 
-define logging function-test log-debug-if ()
-end function-test log-debug-if;
+define test test-log-debug-if ()
+end test;
 
-define logging function-test log-level ()
-end function-test log-level;
+define test test-log-level ()
+end test;
 
-define logging function-test log-level-setter ()
-end function-test log-level-setter;
+define test test-log-level-setter ()
+end test;
 
-define logging function-test log-message ()
-end function-test log-message;
+define test test-log-message ()
+end test;
 
-define logging function-test log-to-target ()
-end function-test log-to-target;
+define test test-log-to-target ()
+end test;
 
-define logging function-test log-additive? ()
+define test test-log-additive? ()
   // Make sure non-additive log DOESN'T pass it on to parent.
   let log1 = make-test-log("aaa");
   let log2 = make-test-log("aaa.bbb", additive?: #f);
@@ -180,15 +179,15 @@ define logging function-test log-additive? ()
   check-equal("additivity respected for target2",
               stream-contents(log2.log-targets[0].target-stream),
               "xxx\n");
-end function-test log-additive?;
+end test;
 
-define logging function-test log-additive?-setter ()
-end function-test log-additive?-setter;
+define test test-log-additive?-setter ()
+end test;
 
-define logging function-test log-enabled? ()
-end function-test log-enabled?;
+define test test-log-enabled? ()
+end test;
 
-define logging function-test log-enabled?-setter ()
+define test test-log-enabled?-setter ()
   // Make sure disabled log doesn't do output
   let log = make-test-log("log-enabled-test");
   log-enabled?(log) := #f;
@@ -205,24 +204,21 @@ define logging function-test log-enabled?-setter ()
   check-equal("additivity respected for disabled log",
               stream-contents(parent.log-targets[0].target-stream),
               "xxx\n");
-end function-test log-enabled?-setter;
+end test;
 
-define logging function-test log-name ()
-end function-test log-name;
+define test test-log-name ()
+end test;
 
-define logging function-test pattern-to-stream ()
-end function-test pattern-to-stream;
+define test test-pattern-to-stream ()
+end test;
 
-define logging function-test remove-target ()
-end function-test remove-target;
+define test test-remove-target ()
+end test;
 
-define logging function-test write-message ()
-end function-test write-message;
+define test test-write-message ()
+end test;
 
-// Defines suite logging-module-test-suite.
-//
-define module-spec logging
-    (setup-function: curry(ensure-directories-exist, $temp-directory))
+define interface-specification-suite logging-specification-suite ()
   open abstract class <abstract-log> (<object>);
   sealed /* instantiable */ class <file-log-target> (<log-target>);
   open /* instantiable */ class <log-formatter> (<object>);
@@ -273,12 +269,6 @@ define module-spec logging
   function pattern-to-stream (<log-formatter>, <stream>, <log-level>, <log-target>, <object>, <sequence>) => ();
   function remove-target (<log>, <log-target>) => ();
   function write-message (<log-target>, <object>, <sequence>) => ();
-end module-spec logging;
+end logging-specification-suite;
 
-// Defines constant logging-test-suite
-//
-define library-spec logging ()
-  module logging;
-  test test-elapsed-milliseconds;
-  test test-process-id;
-end library-spec logging;
+ignore(logging-specification-suite);

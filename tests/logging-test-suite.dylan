@@ -4,17 +4,11 @@ Copyright: Copyright (c) 2013 Dylan Hackers.  See License.txt for details.
 
 define constant fmt = format-to-string;
 
-// No tempfile library, so this'll have to do.
-//
-define constant $temp-directory :: <directory-locator>
-  = subdirectory-locator(temp-directory(),
-                         format-date("logging-%Y%m%d%H%M%S", current-date()));
-
 define function temp-locator
     (filename :: <string>) => (temp-locator :: <file-locator>)
   // locators are a freakin' nightmare...falling back to strings.
   as(<file-locator>,
-     concatenate(as(<string>, $temp-directory), "/", filename))
+     concatenate(as(<string>, test-temp-directory()), "/", filename))
 end;
 
 define function file-contents
@@ -63,7 +57,7 @@ define constant $log-functions
 
 // given = error    pos = 4
 // log = trace   idx = 0           expected = xxx\n
-define function test-log-level
+define function do-test-log-level
     (log-level :: <log-level>)
   reset-logging();
   let log-priority = position($log-levels, log-level);
@@ -83,7 +77,7 @@ define function test-log-level
                     "log level %s", actual, expected, log-level, current-level),
                 expected, actual);
   end;
-end function test-log-level;
+end function;
 
 // elapsed-milliseconds uses double integers.  This test just tries to
 // make sure that number-to-string (should be integer-to-string) doesn't
