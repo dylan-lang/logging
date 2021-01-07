@@ -93,14 +93,24 @@ define variable $root-log :: false-or(<log>) = #f;
 
 define sealed generic log-name
     (log :: <abstract-log>) => (name :: <string>);
+
 define sealed generic log-parent
     (log :: <abstract-log>) => (parent :: false-or(<abstract-log>));
+
 define sealed generic log-children
     (log :: <abstract-log>) => (children :: <string-table>);
+
 define sealed generic log-additive?
     (log :: <abstract-log>) => (additive? :: <boolean>);
+
+define sealed generic log-additive?-setter
+    (new-value :: <boolean>, log :: <abstract-log>) => (additive? :: <boolean>);
+
 define sealed generic log-enabled?
     (log :: <abstract-log>) => (enabled? :: <boolean>);
+
+define sealed generic log-enabled?-setter
+    (new-value :: <boolean>, log :: <abstract-log>) => (enabled? :: <boolean>);
 
 define abstract class <abstract-log> (<object>)
   // A dotted path name.  All parent logs in the path must already exist.
@@ -152,9 +162,17 @@ end;
 define open class <placeholder-log> (<abstract-log>)
 end;
 
-define sealed generic log-level (log :: <log>) => (level :: <log-level>);
-define sealed generic log-targets (log :: <log>) => (targets :: <vector>);
-define sealed generic log-formatter (log :: <log>) => (formatter :: <log-formatter>);
+define sealed generic log-level
+  (log :: <log>) => (level :: <log-level>);
+
+define sealed generic log-level-setter
+  (level :: <log-level>, log :: <log>) => (level :: <log-level>);
+
+define sealed generic log-targets
+  (log :: <log>) => (targets :: <vector>);
+
+define sealed generic log-formatter
+  (log :: <log>) => (formatter :: <log-formatter>);
 
 define open class <log> (<abstract-log>)
   slot log-level :: <log-level> = $trace-level,
@@ -299,6 +317,9 @@ end function add-log;
 //// Log levels
 ////
 
+// Returns a short string naming the level.
+define generic level-name (level :: <log-level>) => (name :: <byte-string>);
+
 // Root of the log level hierarchy.  Logging uses a simple class
 // hierarchy to determine what messages should be logged.
 //
@@ -346,6 +367,10 @@ end;
 //// Logging messages
 ////
 
+define generic log-message
+    (given-level :: <log-level>, log :: <abstract-log>, object :: <object>, #rest args)
+ => ();
+
 // This is generally called via log-info, log-error, etc, which simply curry
 // the first argument.
 //
@@ -365,6 +390,7 @@ end method log-message;
 define method log-message
     (given-level :: <log-level>, log :: <placeholder-log>, object :: <object>,
      #rest args)
+ => ()
   if (log.log-additive?)
     apply(log-message, given-level, log.log-parent, object, args)
   end;

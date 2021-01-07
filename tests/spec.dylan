@@ -256,10 +256,10 @@ define interface-specification-suite logging-specification-suite ()
   function get-log (<string>) => (false-or(<abstract-log>));
   function get-root-log () => (<log>);
   function level-name (<log-level>) => (<string>);
-  function log-debug-if (<object>, <abstract-log>, <string>) => ();
+  function log-debug-if (<object>, <abstract-log>, <object>) => ();
   function log-level-setter (<log-level>, <log>) => (<log-level>);
   function log-level (<log>) => (<log-level>);
-  function log-message (<log-level>, <log>, <object>) => ();
+  function log-message (<log-level>, <abstract-log>, <object>) => ();
   function log-to-target (<log-target>, <log-level>, <log-formatter>, <object>, <sequence>) => ();
   function log-additive?-setter (<boolean>, <abstract-log>) => (<boolean>);
   function log-additive? (<abstract-log>) => (<boolean>);
