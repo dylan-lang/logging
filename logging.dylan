@@ -882,11 +882,11 @@ define function elapsed-milliseconds
     () => (millis :: <double-integer>)
   let duration :: <duration> = current-date() - $application-start-date;
   let (days, hours, minutes, seconds, microseconds) = decode-duration(duration);
-  plus(div(microseconds, 1000.0),
-       plus(mul(seconds, 1000),
-            plus(mul(minutes, 60000),
-                 plus(mul(hours, 3600000), mul(days, 86400000)))))
-end function elapsed-milliseconds;
+  floor(plus(div(microseconds, 1000.0),
+             plus(mul(seconds, 1000),
+                  plus(mul(minutes, 60000),
+                       plus(mul(hours, 3600000), mul(days, 86400000))))))
+end function;
 
 
 /////////////////////////////////////////////////////

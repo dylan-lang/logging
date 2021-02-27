@@ -79,16 +79,17 @@ define function do-test-log-level
   end;
 end function;
 
-// elapsed-milliseconds uses double integers.  This test just tries to
-// make sure that number-to-string (should be integer-to-string) doesn't
-// blow up.
-//
 define test test-elapsed-milliseconds ()
-  // $maximum-integer is the standard value, not from the generic-arithmetic module.
-  let int :: <double-integer> = plus($maximum-integer, 1);
-  check-no-errors("number-to-string(<double-integer>)",
-                  number-to-string(int));
-end;
+  let target = make(<string-log-target>);
+  let log = make(<log>,
+                 name: "test-elapsed-milliseconds",
+                 targets: list(target),
+                 formatter: "%{millis}");
+  log-info(log, "test");
+  let millis-string = split(stream-contents(target.target-stream), " ")[0];
+  // TODO: Need a fake clock to test this better.
+  assert-no-errors(string-to-integer(millis-string));
+end test;
 
 define test test-process-id ()
   for (pattern in #("%{pid}", "%p"),
