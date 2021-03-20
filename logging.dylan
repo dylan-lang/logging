@@ -4,7 +4,7 @@ Synopsis:  Simple logging mechanism.  Some ideas taken from log4j.
 Copyright: Copyright (c) 2013 Dylan Hackers.  See License.txt for details.
 
 
-/* 
+/*
 
 See README.rst for documentation.
 
@@ -368,55 +368,57 @@ end;
 ////
 
 define generic log-message
-    (given-level :: <log-level>, log :: <abstract-log>, object :: <object>, #rest args)
+    (level :: <log-level>, log :: <abstract-log>, object :: <object>, #rest args)
  => ();
 
-// This is generally called via log-info, log-error, etc, which simply curry
-// the first argument.
+// This is generally called via log-info, log-error, etc, not directly.
 //
 define method log-message
-    (given-level :: <log-level>, log :: <log>, object :: <object>, #rest args)
+    (level :: <log-level>, log :: <log>, object :: <object>, #rest args)
  => ()
-  if (log.log-enabled?  & log-level-applicable?(given-level, log.log-level))
+  if (log.log-enabled?  & log-level-applicable?(level, log.log-level))
     for (target :: <log-target> in log.log-targets)
-      log-to-target(target, given-level, log.log-formatter, object, args);
+      log-to-target(target, level, log.log-formatter, object, args);
     end;
   end;
   if (log.log-additive?)
-    apply(log-message, given-level, log.log-parent, object, args);
+    apply(log-message, level, log.log-parent, object, args);
   end;
 end method log-message;
 
 define method log-message
-    (given-level :: <log-level>, log :: <placeholder-log>, object :: <object>,
-     #rest args)
+    (level :: <log-level>, log :: <placeholder-log>, object :: <object>, #rest args)
  => ()
   if (log.log-additive?)
-    apply(log-message, given-level, log.log-parent, object, args)
+    apply(log-message, level, log.log-parent, object, args)
   end;
 end;
 
-// I'm not sure log-trace is a useful distinction from log-debug.
-// I copied it from log4j terminology.  I dropped log-fatal.
-// TODO(cgay): these days I would probably drop log-trace and keep
-// log-fatal.  It's a nice way to exit the program with a backtrace.
+define inline function log-trace (object, #rest args) => ()
+  apply(log-message, $trace-level, *log*, object, args);
+end;
 
-define constant log-trace = curry(log-message, $trace-level);
+define inline function log-debug (object, #rest args) => ()
+  apply(log-message, $debug-level, *log*, object, args);
+end;
 
-define constant log-debug = curry(log-message, $debug-level);
+define inline function log-info (object, #rest args) => ()
+  apply(log-message, $info-level, *log*, object, args);
+end;
 
-define inline function log-debug-if
-    (test, log :: <abstract-log>, object, #rest args)
+define inline function log-warning (object, #rest args) => ()
+  apply(log-message, $warn-level, *log*, object, args);
+end;
+
+define inline function log-error (object, #rest args) => ()
+  apply(log-message, $error-level, *log*, object, args);
+end;
+
+define function log-debug-if (test, object, #rest args) => ()
   if (test)
-    apply(log-debug, log, object, args);
+    apply(log-message, $debug-level, *log*, object, args);
   end;
 end;
-
-define constant log-info = curry(log-message, $info-level);
-
-define constant log-warning = curry(log-message, $warn-level);
-
-define constant log-error = curry(log-message, $error-level);
 
 
 ///////////////////////////////////////////////////////////
@@ -890,6 +892,22 @@ end function;
 
 
 /////////////////////////////////////////////////////
+//// Default log
+
+// This makes it simple, and relatively concise, for small libraries to
+// do logging via log-info et al without having to pass the log each time.
+// Just set this at start-up. Libraries that log to this will obviously
+// log to stderr unless it is re-bound and will also log to stderr if they
+// log at load time. No locking is provided. Threaded libraries should
+// provide their own locking if needed.
+
+define thread variable *log* :: <log>
+  = make(<log>,
+         name: "default",
+         targets: list($stderr-log-target));
+
+
+/////////////////////////////////////////////////////
 //// For use by the test suite
 ////
 
@@ -906,5 +924,3 @@ end;
 begin
   reset-logging();
 end;
-
-

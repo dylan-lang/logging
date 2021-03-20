@@ -19,6 +19,7 @@ end library logging;
 
 define module logging
   create
+    *log*,
     <log>,
     log-formatter,
     log-formatter-setter,

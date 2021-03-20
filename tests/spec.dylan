@@ -56,11 +56,12 @@ end test;
 define test test-<file-log-target> ()
   let locator = temp-locator("file-log-target-test.log");
   let target = make(<file-log-target>, pathname: locator);
-  let log = make(<log>,
-                 name: "file-log-target-test",
-                 targets: list(target),
-                 formatter: $message-only-formatter);
-  log-info(log, "test");
+  dynamic-bind (*log* = make(<log>,
+                             name: "file-log-target-test",
+                             targets: list(target),
+                             formatter: $message-only-formatter))
+    log-info("test");
+  end;
   close(target);
   with-open-file (stream = locator, direction: #"input")
     check-equal("file-log-target has expected contents",
@@ -77,22 +78,21 @@ define test test-<rolling-file-log-target> ()
   let target = make(<rolling-file-log-target>,
                     pathname: locator,
                     max-size: 10);
-  let log = make(<log>,
-                 name: "rolling-file-test",
-                 targets: list(target),
-                 formatter: $message-only-formatter);
-  // I figure this could log 8 or 9 characters, including CR and/or LF.
-  log-info(log, "1234567");
-  close(target);  // can't read file on Windows unless it's closed
-  check-equal("log doesn't roll when below max size",
-              file-contents(locator),
-              "1234567\n");
-  open-target-stream(target);
-  log-info(log, "890");
-  close(target);  // can't read file on Windows unless it's closed
-  check-equal("log rolls when max size exceeded",
-              file-contents(locator),
-              "");
+  dynamic-bind (*log* = make(<log>,
+                             name: "rolling-file-test",
+                             targets: list(target),
+                             formatter: $message-only-formatter))
+    // I figure this could log 8 or 9 characters, including CR and/or LF.
+    log-info("1234567");
+    close(target);  // can't read file on Windows unless it's closed
+    assert-equal("1234567\n", file-contents(locator),
+                 "log doesn't roll when below max size");
+    open-target-stream(target);
+    log-info("890");
+    close(target);  // can't read file on Windows unless it's closed
+    assert-equal("", file-contents(locator),
+                 "log rolls when max size exceeded");
+  end;
 end test;
 
 define test test-$debug-level ()
@@ -161,24 +161,24 @@ define test test-log-additive? ()
   // Make sure non-additive log DOESN'T pass it on to parent.
   let log1 = make-test-log("aaa");
   let log2 = make-test-log("aaa.bbb", additive?: #f);
-  log-error(log2, "xxx");
-  check-equal("non-additivity respected for target1",
-              stream-contents(log1.log-targets[0].target-stream),
-              "");
-  check-equal("non-additivity respected for target2",
-              stream-contents(log2.log-targets[0].target-stream),
-              "xxx\n");
+  dynamic-bind (*log* = log2)
+    log-error("xxx");
+  end;
+  assert-equal("", stream-contents(log1.log-targets[0].target-stream),
+               "non-additivity respected for target1");
+  assert-equal("xxx\n", stream-contents(log2.log-targets[0].target-stream),
+               "non-additivity respected for target2");
 
   // Make sure additive log DOES pass it on to parent.
   let log1 = make-test-log("xxx");
   let log2 = make-test-log("xxx.yyy", additive?: #t);
-  log-error(log2, "xxx");
-  check-equal("additivity respected for target1",
-              stream-contents(log1.log-targets[0].target-stream),
-              "xxx\n");
-  check-equal("additivity respected for target2",
-              stream-contents(log2.log-targets[0].target-stream),
-              "xxx\n");
+  dynamic-bind (*log* = log2)
+    log-error("xxx");
+  end;
+  assert-equal("xxx\n", stream-contents(log1.log-targets[0].target-stream),
+               "additivity respected for target1");
+  assert-equal("xxx\n", stream-contents(log2.log-targets[0].target-stream),
+               "additivity respected for target2");
 end test;
 
 define test test-log-additive?-setter ()
@@ -191,19 +191,19 @@ define test test-log-enabled?-setter ()
   // Make sure disabled log doesn't do output
   let log = make-test-log("log-enabled-test");
   log-enabled?(log) := #f;
-  log-info(log, "xxx");
-  check-equal("disabled log does no output",
-              stream-contents(log.log-targets[0].target-stream),
-              "");
+  dynamic-bind (*log* = log)
+    log-info(log, "xxx");
+  end;
+  assert-equal("", stream-contents(log.log-targets[0].target-stream),
+               "disabled log does no output");
 
   // Make sure disabled log still respects additivity.
   let parent = make-test-log("parent");
   let child = make-test-log("parent.child");
   log-enabled?(child) := #f;
-  log-info(child, "xxx");
-  check-equal("additivity respected for disabled log",
-              stream-contents(parent.log-targets[0].target-stream),
-              "xxx\n");
+  dynamic-bind (*log* = child) log-info("xxx"); end;
+  assert-equal("xxx\n", stream-contents(parent.log-targets[0].target-stream),
+               "additivity respected for disabled log");
 end test;
 
 define test test-log-name ()
@@ -231,23 +231,25 @@ define interface-specification-suite logging-specification-suite ()
   class <stream-log-target> (<log-target>);
 
   class <log-level> (<object>);
-  instantiable class <debug-level> (<trace-level>);
-  instantiable class <error-level> (<warn-level>);
-  instantiable class <info-level> (<debug-level>);
   instantiable class <trace-level> (<log-level>);
+  instantiable class <debug-level> (<trace-level>);
+  instantiable class <info-level> (<debug-level>);
   instantiable class <warn-level> (<info-level>);
+  instantiable class <error-level> (<warn-level>);
 
-  constant $debug-level :: <object>;
-  constant $error-level :: <object>;
-  constant $info-level :: <object>;
   constant $trace-level :: <object>;
+  constant $debug-level :: <object>;
+  constant $info-level :: <object>;
   constant $warn-level :: <object>;
+  constant $error-level :: <object>;
 
-  constant log-debug :: <object>;
-  constant log-error :: <object>;
-  constant log-info :: <object>;
-  constant log-trace :: <object>;
-  constant log-warning :: <object>;
+  variable *log* :: <log>;
+  function log-trace (<object>, #"rest") => ();
+  function log-debug (<object>, #"rest") => ();
+  function log-debug-if (<object>, <object>, #"rest") => ();
+  function log-info (<object>, #"rest") => ();
+  function log-warning (<object>, #"rest") => ();
+  function log-error (<object>, #"rest") => ();
 
   constant $stderr-log-target :: <object>;
   constant $stdout-log-target :: <object>;
@@ -256,7 +258,6 @@ define interface-specification-suite logging-specification-suite ()
   function get-log (<string>) => (false-or(<abstract-log>));
   function get-root-log () => (<log>);
   function level-name (<log-level>) => (<string>);
-  function log-debug-if (<object>, <abstract-log>, <object>) => ();
   function log-level-setter (<log-level>, <log>) => (<log-level>);
   function log-level (<log>) => (<log-level>);
   function log-message (<log-level>, <abstract-log>, <object>) => ();

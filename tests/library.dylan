@@ -27,4 +27,5 @@ define module logging-test-suite
   use operating-system,
     import: { current-process-id };
   use testworks;
+  use threads;
 end module;
