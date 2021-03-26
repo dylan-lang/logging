@@ -49,20 +49,16 @@ define function make-test-log
         init-args)
 end;
 
-define constant $log-levels
-  = list($trace-level, $debug-level, $info-level, $warn-level, $error-level);
-
-define constant $log-functions
-  = list(log-trace, log-debug, log-info, log-warning, log-error);
-
 // given = error    pos = 4
 // log = trace   idx = 0           expected = xxx\n
 define function do-test-log-level
     (log-level :: <log-level>)
   reset-logging();
-  let log-priority = position($log-levels, log-level);
-  for (log-fn in $log-functions,
-       current-level in $log-levels,
+  let functions = list(log-trace, log-debug, log-info, log-warning, log-error);
+  let levels = list($trace-level, $debug-level, $info-level, $warn-level, $error-level);
+  let log-priority = position(levels, log-level);
+  for (log-fn in functions,
+       current-level in levels,
        current-priority from 0)
     let target = make(<string-log-target>);
     let log = make(<log>,
@@ -70,7 +66,9 @@ define function do-test-log-level
                    targets: list(target),
                    level: log-level,
                    formatter: $message-only-formatter);
-    log-fn(log, "xxx");
+    dynamic-bind (*log* = log)
+      log-fn("xxx");
+    end;
     let expected = if (current-priority >= log-priority) "xxx\n" else "" end;
     let actual = stream-contents(target.target-stream);
     check-equal(fmt("Log output (%=) matches expected (%=). Given level %s, "
@@ -81,11 +79,12 @@ end function;
 
 define test test-elapsed-milliseconds ()
   let target = make(<string-log-target>);
-  let log = make(<log>,
-                 name: "test-elapsed-milliseconds",
-                 targets: list(target),
-                 formatter: "%{millis}");
-  log-info(log, "test");
+  dynamic-bind (*log* = make(<log>,
+                             name: "test-elapsed-milliseconds",
+                             targets: list(target),
+                             formatter: "%{millis}"))
+    log-info("test");
+  end;
   let millis-string = split(stream-contents(target.target-stream), " ")[0];
   // TODO: Need a fake clock to test this better.
   assert-no-errors(string-to-integer(millis-string));
@@ -95,14 +94,28 @@ define test test-process-id ()
   for (pattern in #("%{pid}", "%p"),
        i from 1)
     let target = make(<string-log-target>);
-    let log = make(<log>,
-                   name: format-to-string("test-process-id-%s", i),
-                   targets: list(target),
-                   formatter: make(<log-formatter>, pattern: pattern),
-                   level: $trace-level);
-    log-info(log, "this is ignored");
+    dynamic-bind (*log* = make(<log>,
+                               name: format-to-string("test-process-id-%s", i),
+                               targets: list(target),
+                               formatter: make(<log-formatter>, pattern: pattern),
+                               level: $trace-level))
+      log-info("this is ignored");
+    end;
     check-equal("log stream contains process id only",
                 stream-contents(target.target-stream),
                 format-to-string("%d\n", current-process-id()));
   end;
 end test test-process-id;
+
+define test test-default-log ()
+  let log = make-test-log("test-default-log", level: $trace-level);
+  dynamic-bind (*log* = log)
+    log-trace("trace");
+    log-debug("debug");
+    log-info("info");
+    log-warning("warning");
+    log-error("error");
+  end;
+  assert-equal("trace\ndebug\ninfo\nwarning\nerror\n",
+               stream-contents(log.log-targets[0].target-stream));
+end test;
