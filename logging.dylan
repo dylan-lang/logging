@@ -175,7 +175,7 @@ define sealed generic log-formatter
   (log :: <log>) => (formatter :: <log-formatter>);
 
 define open class <log> (<abstract-log>)
-  slot log-level :: <log-level> = $trace-level,
+  slot log-level :: <log-level> = $info-level,
     init-keyword: level:;
 
   constant slot log-targets :: <stretchy-vector> = make(<stretchy-vector>),
