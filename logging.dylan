@@ -381,7 +381,7 @@ define method log-message
       log-to-target(target, level, log.log-formatter, object, args);
     end;
   end;
-  if (log.log-additive?)
+  if (log.log-additive? & log.log-parent)
     apply(log-message, level, log.log-parent, object, args);
   end;
 end method log-message;
@@ -389,7 +389,7 @@ end method log-message;
 define method log-message
     (level :: <log-level>, log :: <placeholder-log>, object :: <object>, #rest args)
  => ()
-  if (log.log-additive?)
+  if (log.log-additive? & log.log-parent)
     apply(log-message, level, log.log-parent, object, args)
   end;
 end;
