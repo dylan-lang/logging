@@ -77,10 +77,10 @@ define function do-test-log-level
   end;
 end function;
 
-define test test-elapsed-milliseconds ()
+define test test-format-elapsed-milliseconds ()
   let target = make(<string-log-target>);
   dynamic-bind (*log* = make(<log>,
-                             name: "test-elapsed-milliseconds",
+                             name: "test-format-elapsed-milliseconds",
                              targets: list(target),
                              formatter: "%{millis}"))
     log-info("test");
@@ -90,12 +90,12 @@ define test test-elapsed-milliseconds ()
   assert-no-errors(string-to-integer(millis-string));
 end test;
 
-define test test-process-id ()
+define test test-format-process-id ()
   for (pattern in #("%{pid}", "%p"),
        i from 1)
     let target = make(<string-log-target>);
     dynamic-bind (*log* = make(<log>,
-                               name: format-to-string("test-process-id-%s", i),
+                               name: format-to-string("test-format-process-id-%s", i),
                                targets: list(target),
                                formatter: make(<log-formatter>, pattern: pattern),
                                level: $trace-level))
@@ -105,10 +105,28 @@ define test test-process-id ()
                 stream-contents(target.target-stream),
                 format-to-string("%d\n", current-process-id()));
   end;
-end test test-process-id;
+end test;
 
-define test test-default-log ()
-  let log = make-test-log("test-default-log", level: $trace-level);
+define test test-format-severity ()
+  let target = make(<string-log-target>);
+  dynamic-bind (*log* = make(<log>,
+                             name: "test-format-severity",
+                             targets: list(target),
+                             formatter: make(<log-formatter>, pattern: "%s %{severity}"),
+                             level: $trace-level))
+    log-trace("x");
+    log-debug("x");
+    log-info("x");
+    log-warning("x");
+    log-error("x");
+  end;
+  assert-equal("T TRACE\nD DEBUG\nI INFO\nW WARNING\nE ERROR\n",
+               stream-contents(target.target-stream))
+end test;
+
+// Check that by default trace and debug logging is not output.
+define test test-default-severity-level ()
+  let log = make-test-log("test-default-log");
   dynamic-bind (*log* = log)
     log-trace("trace");
     log-debug("debug");
@@ -116,6 +134,6 @@ define test test-default-log ()
     log-warning("warning");
     log-error("error");
   end;
-  assert-equal("trace\ndebug\ninfo\nwarning\nerror\n",
+  assert-equal("info\nwarning\nerror\n",
                stream-contents(log.log-targets[0].target-stream));
 end test;

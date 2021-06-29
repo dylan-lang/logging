@@ -314,7 +314,7 @@ end function add-log;
 
 
 ///////////////////////////////////////////////////////////
-//// Log levels
+//// Log severity levels
 ////
 
 // Returns a short string naming the level.
@@ -324,28 +324,33 @@ define generic level-name (level :: <log-level>) => (name :: <byte-string>);
 // hierarchy to determine what messages should be logged.
 //
 define open abstract primary class <log-level> (<object>)
-  constant slot level-name :: <byte-string>,
-    init-keyword: name:;
+  constant slot level-name :: <byte-string>;
+  constant slot level-short-name :: <byte-string>;
 end;
 
 define open class <trace-level> (<log-level>)
-  inherited slot level-name = "trace";
+  inherited slot level-name = "TRACE";
+  inherited slot level-short-name = "T";
 end;
 
 define open class <debug-level> (<trace-level>)
-  inherited slot level-name = "debug";
+  inherited slot level-name = "DEBUG";
+  inherited slot level-short-name = "D";
 end;
 
 define open class <info-level> (<debug-level>)
-  inherited slot level-name = "info";
+  inherited slot level-name = "INFO";
+  inherited slot level-short-name = "I";
 end;
 
 define open class <warn-level> (<info-level>)
-  inherited slot level-name = "WARN";
+  inherited slot level-name = "WARNING";
+  inherited slot level-short-name = "W";
 end;
 
 define open class <error-level> (<warn-level>)
   inherited slot level-name = "ERROR";
+  inherited slot level-short-name = "E";
 end;
 
 define constant $trace-level = make(<trace-level>);
@@ -811,7 +816,14 @@ define method parse-formatter-pattern
                           as-iso8601-string(current-date())
                         end)
                   end;
-                "level" =>
+                "level" =>      // deprecated, use "severity"
+                  method (level, target, object, args)
+                    pad(level-name(level))
+                  end;
+                "severity" =>
+                  // Would be nice to do this padding at compile time since the severity
+                  // level is explicit in the log-info etc call. Just pass the level to
+                  // this function (parse-formatter-pattern).
                   method (level, target, object, args)
                     pad(level-name(level))
                   end;
@@ -861,6 +873,10 @@ define method parse-formatter-pattern
                method (#rest args)
                  pad(number-to-string(elapsed-milliseconds()));
                end;
+             's' =>
+               method (level, target, object, args)
+                 pad(level-short-name(level))
+               end;
              't' =>
                method (#rest args)
                  pad(thread-name(current-thread()));
@@ -876,7 +892,7 @@ define method parse-formatter-pattern
 end method parse-formatter-pattern;
 
 define constant $default-log-formatter :: <log-formatter>
-  = make(<log-formatter>, pattern: "%{date:%Y-%m-%dT%H:%M:%S.%F%z} %-5L [%t] %m");
+  = make(<log-formatter>, pattern: "%s %{date:%Y-%m-%dT%H:%M:%S.%F%z} [%t] %m");
 
 define constant $application-start-date :: <date> = current-date();
 
