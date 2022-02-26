@@ -614,20 +614,30 @@ define class <rolling-file-log-target> (<file-log-target>)
   //constant slot compress-on-close? :: <boolean> = #t,
   //  init-keyword: #"compress?";
 
-  // Date when the underlying file was created.  When it gets closed
-  // it will be renamed with this date in the name.
-  slot file-creation-date :: <date> = current-date();
-
-end class <rolling-file-log-target>;
+  // Date when the underlying file was last rolled.  When it gets closed it
+  // will be renamed with this date in the name.
+  slot file-roll-date :: <date> = current-date();
+end class;
 
 define constant $log-roller-lock :: <lock> = make(<lock>);
 
+define method make
+    (class :: subclass(<rolling-file-log-target>), #rest args, #key pathname)
+ => (target :: <rolling-file-log-target>)
+  // Prevent relative locators from resolving differently when the file is
+  // rolled by making them absolute at creation time.
+  let path
+    = simplify-locator(merge-locators(as(<file-system-file-locator>, pathname),
+                                      working-directory()));
+  apply(next-method, class, pathname: path, args)
+end method;
 
 define method initialize
     (target :: <rolling-file-log-target>, #key roll :: <boolean> = #t)
+  let path = target.target-pathname;
   if (roll
-        & file-exists?(target.target-pathname)
-        & file-property(target.target-pathname, #"size") > 0)
+        & file-exists?(path)
+        & file-property(path, #"size") > 0)
     roll-log-file(target);
   end;
   next-method();
@@ -669,13 +679,13 @@ define method roll-log-file
     // Also consider putting more info in the rolled filenames, such
     // as process id, hostname, etc.  Makes it easier to combine files
     // into a single location.
-    let date = format-date("%Y%m%dT%H%M%S", target.file-creation-date);
+    let date = format-date("%Y%m%dT%H%M%S", target.file-roll-date);
     let oldloc = as(<file-locator>, target.target-pathname);
     let newloc = merge-locators(as(<file-locator>,
                                    concatenate(locator-name(oldloc), ".", date)),
                                 oldloc);
     rename-file(oldloc, newloc);
-    target.file-creation-date := current-date();
+    target.file-roll-date := current-date();
     open-target-stream(target);
   end with-lock;
 end method roll-log-file;
