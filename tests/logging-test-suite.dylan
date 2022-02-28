@@ -137,3 +137,49 @@ define test test-default-severity-level ()
   assert-equal("info\nwarning\nerror\n",
                stream-contents(log.log-targets[0].target-stream));
 end test;
+
+// Make sure that if a relative locator is given for a rolling log file
+// the new file is created in the same directory when the log rolls.
+define test test-rolling-log-file-absolutism ()
+  let cwd = working-directory();
+  let test-dir = test-temp-directory();
+  block ()
+    working-directory() := test-dir;
+
+    // Create the target and the first log file...
+    let relative = as(<file-locator>, "rolling.log");
+    let absolute = merge-locators(relative, test-dir);
+    assert-false(file-exists?(relative));
+    assert-false(file-exists?(absolute));
+    let target = make(<rolling-file-log-target>,
+                      pathname: relative,
+                      max-size: 10);
+    let formatter = make(<log-formatter>, pattern: "%m");
+    assert-true(file-exists?(relative), "relative file exists after creating target?");
+    assert-true(file-exists?(absolute), "absolute file exists after creating target?");
+
+    // Because the initial file timestamp is stored when the target is created,
+    // and then again when it is rolled, we need to make sure it doesn't roll
+    // in the same second as when it was created, or the NEXT roll will have a
+    // filename conflict.
+    sleep(1.0);
+
+    // This should roll the file since it outputs more than 10 bytes and the
+    // roll check is performed after doing output, not before.
+    log-to-target(target, $info-level, formatter, "aaaaaaaaaaaaaaaaaaaa", #[]);
+    let files1 = directory-contents(test-dir);
+    assert-equal(2, files1.size);
+
+    // Change working directory
+    let subdir = subdirectory-locator(test-dir, "subdir");
+    ensure-directories-exist(subdir);
+    working-directory() := subdir;
+
+    // This should roll the file again.
+    log-to-target(target, $info-level, formatter, "bbbbbbbbbbbbbbbbbbbb", #[]);
+    let files2 = directory-contents(test-dir);
+    assert-equal(4, files2.size); // including subdir
+  cleanup
+    working-directory() := cwd;
+  end block;
+end test;

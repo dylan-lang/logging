@@ -7,8 +7,7 @@ define library logging-test-suite
   use generic-arithmetic;
   use io;
   use logging;
-  use system,
-    import: { date, file-system, locators, operating-system };
+  use system;
   use testworks;
 end library;
 
@@ -21,11 +20,9 @@ define module logging-test-suite
   use logging;
   use logging-impl;
   use streams;
-  use file-system,
-    import: { delete-file, ensure-directories-exist, file-exists?, <pathname>, with-open-file };
+  use file-system;
   use locators;
-  use operating-system,
-    import: { current-process-id };
+  use operating-system;
   use testworks;
   use threads;
 end module;

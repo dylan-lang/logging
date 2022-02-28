@@ -90,7 +90,6 @@ define module logging-impl
     exclude: { format-to-string };
   use date;
   use file-system;
-    //import: { <file-stream>, <pathname>, rename-file };
   use format;
   use generic-arithmetic,
     import: { <integer> => <double-integer>,
@@ -101,7 +100,8 @@ define module logging-impl
     import: { <locator>,
               <file-locator>,
               locator-name,
-              merge-locators };
+              merge-locators,
+              simplify-locator };
   use logging;
   use operating-system,
     import: { current-process-id };
@@ -114,6 +114,4 @@ define module logging-impl
     // for test suite
     elapsed-milliseconds,
     reset-logging;
-
 end module logging-impl;
-
