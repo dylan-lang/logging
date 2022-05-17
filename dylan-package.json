@@ -1,0 +1,13 @@
+{
+    "name": "logging",
+    "category": "utilities",
+    "contact": "dylan-lang@googlegroups.com",
+    "description": "Logging library",
+    "dependencies": [
+    ],
+    "dev-dependencies": [
+        "testworks@2.1"
+    ],
+    "url": "https://github.com/dylan-lang/logging",
+    "version": "2.2.0"
+}
