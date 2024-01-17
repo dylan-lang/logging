@@ -11,11 +11,6 @@ Overview
 The logging library provides a traditional file-based logging facility. It
 exports a single module named "logging".
 
-
-.. contents::
-
-
-
 Quick Start
 -----------
 
