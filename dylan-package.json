@@ -6,8 +6,9 @@
     "dependencies": [
     ],
     "dev-dependencies": [
+        "sphinx-extensions",
         "testworks@2.1"
     ],
     "url": "https://github.com/dylan-lang/logging",
-    "version": "2.2.0"
+    "version": "2.2.1"
 }
