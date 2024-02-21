@@ -1,2 +1,7 @@
+*~
 *.hdp
 _build
+_packages/
+_test/
+registry/
+documentation/build/
