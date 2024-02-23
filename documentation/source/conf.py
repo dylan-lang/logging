@@ -13,7 +13,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('../sphinx-extensions/sphinxcontrib'))
+sys.path.insert(0, os.path.abspath('../../_packages/sphinx-extensions/current/src/sphinxcontrib'))
 
 import dylan.domain
 import dylan.themes as dylan_themes
@@ -26,7 +26,7 @@ author = 'Dylan Hackers'
 
 # The full version, including alpha/beta/rc tags
 release = 'v2.1.1'
-
+version = release
 
 # -- General configuration ---------------------------------------------------
 
@@ -57,9 +57,12 @@ primary_domain = 'dylan'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'furo'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
+
+# Ignore certification verification
+tls_verify = False

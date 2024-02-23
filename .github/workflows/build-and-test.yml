@@ -3,28 +3,43 @@ name: build-and-test
 on:
   push:
     # all branches
+    paths-ignore:
+      - 'documentation/**'
   pull_request:
     branches:
       - main
       - master
+    paths-ignore:
+      - 'documentation/**'
 
   # This enables the Run Workflow button on the Actions tab.
   workflow_dispatch:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - uses: dylan-lang/install-opendylan@v2
+      - name: Install dylan-tool
+        uses: dylan-lang/install-dylan-tool@v2
+
+      - name: Update packages
+        run: dylan update
 
       - name: Build logging-test-suite
-        run: ./dylan-compiler -build -jobs 3 logging-test-suite
+        run: dylan build logging-test-suite
 
       - name: Build testworks-run
-        run: ./dylan-compiler -build -jobs 3 testworks-run
+        run: dylan build testworks-run
 
       - name: Run logging-test-suite
-        run: _build/bin/testworks-run --load liblogging-test-suite.so
+        run: |
+          _build/bin/testworks-run --load liblogging-test-suite.so
+
