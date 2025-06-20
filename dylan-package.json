@@ -3,12 +3,13 @@
     "category": "utilities",
     "contact": "dylan-lang@googlegroups.com",
     "description": "Logging library",
-    "dependencies": [
-    ],
+    "dependencies": [],
     "dev-dependencies": [
         "sphinx-extensions",
-        "testworks@2.1"
+        "testworks"
     ],
     "url": "https://github.com/dylan-lang/logging",
-    "version": "2.2.1"
+    "version": "2.2.2",
+    "license": "MIT",
+    "license-url": "https://github.com/dylan-lang/logging/blob/master/License.txt"
 }
