@@ -48,9 +48,29 @@ define test test-<stream-log-target> ()
 end test;
 
 define test test-$stderr-log-target ()
+  let ostream = make(<string-stream>, direction: #"output");
+  dynamic-bind (*log* = make(<log>,
+                             name: "stdout",
+                             targets: list($stdout-log-target),
+                             formatter: $message-only-formatter),
+                *standard-output* = ostream)
+    log-info("stdout");
+  end;
+  assert-equal("stdout\n", ostream.stream-contents,
+               "$stdout-log-target follows rebinding of *standard-output*");
 end test;
 
 define test test-$stdout-log-target ()
+  let ostream = make(<string-stream>, direction: #"output");
+  dynamic-bind (*log* = make(<log>,
+                             name: "stderr",
+                             targets: list($stderr-log-target),
+                             formatter: $message-only-formatter),
+                *standard-error* = ostream)
+    log-info("stderr");
+  end;
+  assert-equal("stderr\n", ostream.stream-contents,
+               "$stderr-log-target follows rebinding of *standard-error*");
 end test;
 
 define test test-<file-log-target> ()

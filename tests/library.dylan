@@ -23,6 +23,7 @@ define module logging-test-suite
   use file-system;
   use locators;
   use operating-system;
+  use standard-io;
   use testworks;
   use threads;
 end module;
