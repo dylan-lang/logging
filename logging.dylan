@@ -446,6 +446,10 @@ define open generic log-to-target
      object :: <object>, args :: <sequence>)
  => ();
 
+define generic target-stream
+    (target :: <log-target>)
+ => (stream :: false-or(<stream>));
+
 // Override this if you want to use a normal formatter string but
 // want to write objects to the log stream instead of strings.
 //
@@ -483,7 +487,7 @@ define constant $null-log-target :: <null-log-target>
 define open class <stream-log-target> (<log-target>)
   constant slot target-stream :: <stream>,
     required-init-keyword: #"stream";
-end;
+end class;
 
 define method print-object
     (target :: <stream-log-target>, stream :: <stream>)
@@ -494,12 +498,6 @@ define method print-object
     write(stream, "stream target");
   end;
 end method print-object;
-
-define constant $stdout-log-target
-  = make(<stream-log-target>, stream: *standard-output*);
-
-define constant $stderr-log-target
-  = make(<stream-log-target>, stream: *standard-error*);
 
 define method log-to-target
     (target :: <stream-log-target>, level :: <log-level>, formatter :: <log-formatter>,
@@ -518,6 +516,30 @@ define method write-message
  => ()
   apply(format, target.target-stream, format-string, args);
 end method write-message;
+
+
+// stdout / stderr log targets
+
+// These allow for the logs to be redirected to a new stream when *standard-output* and
+// *standard-error* are changed with dynamic-bind. (These don't actually need the
+// `target-stream` slot, but we subclass <stream-log-target> for convenience. Might be
+// able to rework the class hierarchy to fix this....)
+
+define sealed class <stdout-log-target> (<stream-log-target>) end;
+
+define method target-stream (target :: <stdout-log-target>) => (stream :: <stream>)
+  *standard-output*
+end method;
+
+define constant $stdout-log-target = make(<stdout-log-target>, stream: *standard-output*);
+
+define sealed class <stderr-log-target> (<stream-log-target>) end;
+
+define method target-stream (target :: <stderr-log-target>) => (stream :: <stream>)
+  *standard-error*
+end method;
+
+define constant $stderr-log-target = make(<stderr-log-target>, stream: *standard-error*);
 
 
 // A log target that is backed by a single, monolithic file.
