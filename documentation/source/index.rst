@@ -521,7 +521,7 @@ Short  Long         Description
                     with format arguments already interpolated.
 %p     %{pid}       Current process ID.  (Not yet implemented.)
 %r     %{millis}    Milliseconds since application started.
-%t     %{thread}    Current thread name.
+%t     %{thread}    Current thread name, or thread ID if no name.
 %%     None         The % character.
 =====  ===========  ===================================================
 

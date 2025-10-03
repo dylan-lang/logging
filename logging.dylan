@@ -874,7 +874,8 @@ define method parse-formatter-pattern
                   end;
                 "thread" =>
                   method (#rest args)
-                    pad(thread-name(current-thread()));
+                    pad(thread-name(current-thread())
+                          | number-to-string(current-thread-id()));
                   end;
                 otherwise =>
                   // Unknown control string.  Just output the text we've seen...
@@ -911,7 +912,8 @@ define method parse-formatter-pattern
                end;
              't' =>
                method (#rest args)
-                 pad(thread-name(current-thread()));
+                 pad(thread-name(current-thread())
+                       | number-to-string(current-thread-id()));
                end;
              '%' => pad("%");
              otherwise =>
