@@ -107,6 +107,31 @@ define test test-format-process-id ()
   end;
 end test;
 
+define test test-format-thread ()
+  local
+    method log-in-thread (n, pattern, thread-name)
+      let target = make(<string-log-target>);
+      local method thread-top-level ()
+              let log = make(<log>,
+                             name: format-to-string("test-format-thread-%d", n),
+                             targets: list(target),
+                             formatter: make(<log-formatter>, pattern: pattern),
+                             level: $trace-level);
+              log-message($trace-level, log, "ignored");
+            end;
+      let thread = make(<thread>,
+                        name: thread-name,
+                        function: thread-top-level);
+      join-thread(thread);
+      values(stream-contents(target.target-stream),
+             thread-id(thread))
+    end method;
+  assert-equal("foo\n", log-in-thread(1, "%{thread}", "foo"));
+  assert-equal("bar\n", log-in-thread(2, "%t", "bar"));
+  let (message, thread-id) = log-in-thread(3, "%{thread}", #f);
+  assert-equal(format-to-string("%d\n", thread-id), message);
+end test;
+
 define test test-format-severity ()
   let target = make(<string-log-target>);
   dynamic-bind (*log* = make(<log>,
