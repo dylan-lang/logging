@@ -1,6 +1,6 @@
-*******************
-The logging Library
-*******************
+*******
+logging
+*******
 
 .. current-library:: logging
 .. current-module:: logging
@@ -454,7 +454,6 @@ Log Targets
    :parameter target: An instance of :class:`<stream-log-target>`.
    :value stream: An instance of :class:`<stream>`.
 
-   
 .. generic-function:: log-to-target
    :open:
 
