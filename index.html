@@ -304,15 +304,22 @@ log still logs to ancestor logs if they are themselves enabled.</p>
 </section>
 <section id="errors">
 <h2>Errors<a class="headerlink" href="#errors" title="Link to this heading">¶</a></h2>
-<p>If there is an error when parsing a <a class="reference internal" href="#logging:logging:[log-formatter]"><code class="xref dylan dylan-class docutils literal notranslate"><span class="pre">&lt;log-formatter&gt;</span></code></a> format
-control string or in finding a <a class="reference internal" href="#logging:logging:[log]"><code class="xref dylan dylan-class docutils literal notranslate"><span class="pre">&lt;log&gt;</span></code></a> object by name, a
-<a class="reference internal" href="#logging:logging:[logging-error]"><code class="xref dylan dylan-class docutils literal notranslate"><span class="pre">&lt;logging-error&gt;</span></code></a> will be signaled.</p>
 <dl class="dylan class">
 <dt class="sig sig-object dylan-api dylan" id="logging:logging:[logging-error]">
 <span class="sig-name descname"><span class="pre">&lt;logging-error&gt;</span></span> <em class="property"><span class="pre">Open</span> <span class="pre">Class</span></em><a class="headerlink" href="#logging:logging:[logging-error]" title="Link to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Superclasses<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference external" href="https://opendylan.org/books/drm/Condition_Classes#error"><code class="xref drm docutils literal notranslate"><span class="pre">&lt;error&gt;</span></code></a>, <code class="xref dylan dylan-class docutils literal notranslate"><span class="pre">&lt;simple-condition&gt;</span></code></p>
+</dd>
+<dt class="field-even">Discussion<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Errors explicitly signaled by this library are instances of
+<a class="reference internal" href="#logging:logging:[logging-error]"><code class="xref dylan dylan-class docutils literal notranslate"><span class="pre">&lt;logging-error&gt;</span></code></a>.  Examples of when this error is signaled:</p>
+<ul class="simple">
+<li><p>Parsing a bad <a class="reference internal" href="#logging:logging:[log-formatter]"><code class="xref dylan dylan-class docutils literal notranslate"><span class="pre">&lt;log-formatter&gt;</span></code></a> format control string.</p></li>
+<li><p>Can’t find a <a class="reference internal" href="#logging:logging:[log]"><code class="xref dylan dylan-class docutils literal notranslate"><span class="pre">&lt;log&gt;</span></code></a> object by name.</p></li>
+<li><p>Can’t roll a log file due to file name conflicts.</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -950,8 +957,21 @@ when it rolls may be slightly larger, depending on the size of the
 last message logged.</p></li>
 <li><p><strong>roll</strong> – A <a class="reference external" href="https://opendylan.org/books/drm/Simple_Object_Classes#boolean"><code class="xref drm docutils literal notranslate"><span class="pre">&lt;boolean&gt;</span></code></a> specifying whether to roll the log file at the
 time this log target is created, if it already exists and is not
-empty.</p></li>
+empty. The default is <a class="reference external" href="https://opendylan.org/books/drm/Other_Built-In_Objects_Defined#true"><code class="xref drm docutils literal notranslate"><span class="pre">#t</span></code></a>.</p></li>
 </ul>
+</dd>
+<dt class="field-odd">Discussion<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p>A file log target that is “rolled” when it reaches a maximum size. Rolling the log
+file consists of renaming the current file to a name that contains the date the
+original file was <em>created</em>.  For example, <code class="file docutils literal notranslate"><span class="pre">foo.log</span></code> might be renamed to
+<code class="file docutils literal notranslate"><span class="pre">foo.log.20260303T185404</span></code>.  (Note that the date is in local time.)</p>
+<p>If the log file is rolled multiple times within the same second (e.g., due to a
+crash loop in your program) it will encounter file name conflicts. To resolve the
+conflict the file is renamed with an additional numeric suffix concatenated to the
+date, for example <code class="file docutils literal notranslate"><span class="pre">foo.log.20260303T185404.1</span></code>.  After the suffix reaches
+<code class="docutils literal notranslate"><span class="pre">.9</span></code> and the file still can’t be renamed without clobbering an existing file, a
+<a class="reference internal" href="#logging:logging:[logging-error]"><code class="xref dylan dylan-class docutils literal notranslate"><span class="pre">&lt;logging-error&gt;</span></code></a> is signaled.</p>
+</p>
 </dd>
 </dl>
 </dd></dl>

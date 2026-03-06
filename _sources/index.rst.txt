@@ -85,15 +85,19 @@ log still logs to ancestor logs if they are themselves enabled.
 Errors
 ------
 
-If there is an error when parsing a :class:`<log-formatter>` format
-control string or in finding a :class:`<log>` object by name, a
-:class:`<logging-error>` will be signaled.
-
 .. class:: <logging-error>
    :open:
 
    :superclasses: :drm:`<error>`, :class:`<simple-condition>`
 
+   :description:
+
+      Errors explicitly signaled by this library are instances of
+      :class:`<logging-error>`.  Examples of when this error is signaled:
+
+      * Parsing a bad :class:`<log-formatter>` format control string.
+      * Can't find a :class:`<log>` object by name.
+      * Can't roll a log file due to file name conflicts.
 
 Log Levels
 ----------
@@ -435,7 +439,21 @@ Log Targets
    :keyword roll:
       A :drm:`<boolean>` specifying whether to roll the log file at the
       time this log target is created, if it already exists and is not
-      empty.
+      empty. The default is :drm:`#t`.
+
+   :description:
+
+      A file log target that is "rolled" when it reaches a maximum size. Rolling the log
+      file consists of renaming the current file to a name that contains the date the
+      original file was *created*.  For example, :file:`foo.log` might be renamed to
+      :file:`foo.log.20260303T185404`.  (Note that the date is in local time.)
+
+      If the log file is rolled multiple times within the same second (e.g., due to a
+      crash loop in your program) it will encounter file name conflicts. To resolve the
+      conflict the file is renamed with an additional numeric suffix concatenated to the
+      date, for example :file:`foo.log.20260303T185404.1`.  After the suffix reaches
+      ``.9`` and the file still can't be renamed without clobbering an existing file, a
+      :class:`<logging-error>` is signaled.
 
 .. class:: <stream-log-target>
    :open:
