@@ -145,7 +145,7 @@ define test test-format-severity ()
     log-warning("x");
     log-error("x");
   end;
-  assert-equal("T TRACE\nD DEBUG\nI INFO\nW WARNING\nE ERROR\n",
+  assert-equal("T T\nD D\nI I\nW W\nE E\n",
                stream-contents(target.target-stream))
 end test;
 

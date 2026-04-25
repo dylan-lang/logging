@@ -770,170 +770,132 @@ define method pattern-to-stream
   end;
 end method pattern-to-stream;
 
-// Parse a string of the form "%{r} blah %{m} ..." into a list of functions
-// and/or strings.  The functions can be called with no arguments and return
-// strings.  The concatenation of all the resulting strings is the log message.
-// (The concatenation needn't ever be done if writing to a stream, but I do
-// wonder which would be faster, concatenation or multiple stream writes.
-// Might be worth benchmarking at some point.)
+// Parse a string of the form "%{r} blah %{m} ..." into a list of functions and/or
+// strings.  The functions can be called with no arguments and return strings.
 //
+// This function could be a lot simpler. It's done this way to avoid dependencies on the
+// regular-expressions and strings libraries.
 define method parse-formatter-pattern
     (pattern :: <string>)
  => (parsed :: <sequence>)
   let result :: <stretchy-vector> = make(<stretchy-vector>);
   block (exit)
-    let dispatch-char :: <byte-character> = '%';
-    let index :: <integer> = 0;
-    let control-size :: <integer> = pattern.size;
-    local method next-char () => (char :: <character>)
-            if (index >= control-size)
-              logging-error("Log format control string ended prematurely: %s",
-                            pattern);
-            else
-              let char = pattern[index];
-              index := index + 1;
-              char
-            end
-          end method;
-    local method peek-char () => (char :: false-or(<character>))
-            if (index < control-size)
-              pattern[index]
-            end
+    let (state, limit, next-state, finished-state?, ignored-current-key, current-element)
+      = forward-iteration-protocol(pattern);
+    local
+      method peek () => (char :: false-or(<character>))
+        if (~finished-state?(pattern, state, limit))
+          current-element(pattern, state)
+        end
+      end method,
+      method consume () => (char :: <character>)
+        if (finished-state?(pattern, state, limit))
+          logging-error("Log format control string ended prematurely: %s", pattern);
+        end;
+        let char = current-element(pattern, state);
+        state := next-state(pattern, state);
+        char
+      end method,
+      method read-until (fn :: <function>, #key error?)
+        let buf = make(<stretchy-vector>);
+        iterate loop (ch = peek())
+          if (~ch & error?)
+            logging-error("format control string ended prematurely: %s", pattern);
           end;
-    while (index < control-size)
-      // Skip to dispatch char.
-      for (i :: <integer> = index then (i + 1),
-           until: ((i == control-size)
-                   | (pattern[i] == dispatch-char)))
-      finally
-        if (i ~== index)
-          add!(result, copy-sequence(pattern, start: index, end: i));
-        end;
-        if (i == control-size)
-          exit();
-        else
-          index := i + 1;
-        end;
-      end for;
-      let start :: <integer> = index;
-      let align :: <symbol> = #"right";
+          if (~ch | fn(ch))
+            ch & consume();
+            values(as(<string>, buf), ch)
+          else
+            add!(buf, consume());
+            loop(peek())
+          end
+        end
+      end method;
+    while (~finished-state?(pattern, state, limit))
+      let directive-arg = #f;
       let width :: <integer> = 0;
-      let char = next-char();
-      if (char == '-')
-        align := #"left";
-        char := next-char();
-      end;
-      if (member?(char, "0123456789"))
-        let (wid, idx) = string-to-integer(pattern, start: index - 1);
-        width := wid;
-        index := idx;
-        char := next-char();
-      end;
-      local method pad (string :: <string>)
-              let len :: <integer> = string.size;
-              if (width <= len)
-                string
+      let align = #"right";
+      local
+        method pad (string :: <string>)
+          let len :: <integer> = string.size;
+          if (width <= len)
+            string
+          else
+            let buf = make(<stretchy-vector>);
+            if (align == #"left")
+              concatenate!(buf, string);
+              for (i from 1 to width - len) add!(buf, ' ') end;
+            else
+              for (i from 1 to width - len) add!(buf, ' ') end;
+              concatenate!(buf, string);
+            end;
+            as(<string>, buf)
+          end
+        end,
+        method %%date (#rest ignore)
+          pad(if (directive-arg)
+                format-date(directive-arg, current-date())
               else
-                let fill :: <string> = make(<string>, size: width - len, fill: ' ');
-                if (align == #"left")
-                  concatenate(string, fill)
-                else
-                  concatenate(fill, string)
-                end
-              end
-            end method;
-      local method parse-long-format-control ()
-              let bpos = index;
-              while (~member?(peek-char(), ":}")) next-char() end;
-              let word = copy-sequence(pattern, start: bpos, end: index);
-              let arg = #f;
-              if (pattern[index] == ':')
-                next-char();
-                let start = index;
-                while(peek-char() ~= '}') next-char() end;
-                arg := copy-sequence(pattern, start: start, end: index);
-              end;
-              next-char();   // eat '}'
-              select (word by \=)
-                "date" =>
-                  method (#rest args)
-                    pad(if (arg)
-                          format-date(arg, current-date())
-                        else
-                          as-iso8601-string(current-date())
-                        end)
-                  end;
-                "level" =>      // deprecated, use "severity"
-                  method (level, target, object, args)
-                    pad(level-name(level))
-                  end;
-                "severity" =>
-                  // Would be nice to do this padding at compile time since the severity
-                  // level is explicit in the log-info etc call. Just pass the level to
-                  // this function (parse-formatter-pattern).
-                  method (level, target, object, args)
-                    pad(level-name(level))
-                  end;
-                "message" =>
-                  method (level, target, object, args)
-                    write-message(target, object, args);
-                    #f
-                  end;
-                "pid" =>
-                  method (#rest args)
-                    pad(integer-to-string(current-process-id()));
-                  end;
-                "millis" =>
-                  method (#rest args)
-                    pad(number-to-string(elapsed-milliseconds()));
-                  end;
-                "thread" =>
-                  method (#rest args)
-                    pad(thread-name(current-thread())
-                          | number-to-string(current-thread-id()));
-                  end;
-                otherwise =>
-                  // Unknown control string.  Just output the text we've seen...
-                  copy-sequence(pattern, start: start, end: index);
-              end select;
-            end method;
+                as-iso8601-string(current-date())
+              end)
+        end,
+        method %%severity (level, target, object, args)
+          // Would be nice to do this padding at compile time since the severity level is
+          // explicit in the log-info etc call. Just pass the level to this function
+          // (parse-formatter-pattern).
+          pad(level-short-name(level))
+        end,
+        method %%message (level, target, object, args)
+          write-message(target, object, args);
+          #f
+        end,
+        method %%process (#rest args)
+          pad(integer-to-string(current-process-id()));
+        end,
+        method %%milliseconds (#rest args)
+          pad(number-to-string(elapsed-milliseconds()));
+        end,
+        method %%thread (#rest args)
+          pad(thread-name(current-thread())
+                | number-to-string(current-thread-id()));
+        end,
+        method parse-long-format-control ()
+          let (word, ch) = read-until(method (c) c == ':' | c == '}' end, error?: #t);
+          if (ch == ':')
+            directive-arg := read-until(method (c) c == '}' end);
+          end;
+          select (word by \=)
+            "date"     => %%date;
+            "level"    => %%severity; // deprecated, use "severity"
+            "severity" => %%severity;
+            "message"  => %%message;
+            "pid"      => %%process;
+            "millis"   => %%milliseconds;
+            "thread"   => %%thread;
+          end select
+        end;
+      let (text, ch) = read-until(method (c) c == '%' end);
+      add!(result, text);
+      ch | exit();
+      if (peek() == '-')
+        consume();
+        align := #"left";
+      end;
+      while (peek() & member?(peek(), "0123456789"))
+        let digit-value = as(<integer>, consume()) - as(<integer>, '0');
+        width := width * 10 + digit-value;
+      end;
       add!(result,
-           select (char)
-             '{' => parse-long-format-control();
-             'd' =>
-               method (#rest args)
-                 pad(as-iso8601-string(current-date()));
-               end;
-             'l', 'L' =>
-               method (level, target, object, args)
-                 pad(level-name(level))
-               end;
-             'm' =>
-               method (level, target, object, args)
-                 write-message(target, object, args);
-                 #f
-               end;
-             'p' =>
-               method (#rest args)
-                 pad(integer-to-string(current-process-id()));
-               end;
-             'r' =>
-               method (#rest args)
-                 pad(number-to-string(elapsed-milliseconds()));
-               end;
-             's' =>
-               method (level, target, object, args)
-                 pad(level-short-name(level))
-               end;
-             't' =>
-               method (#rest args)
-                 pad(thread-name(current-thread())
-                       | number-to-string(current-thread-id()));
-               end;
-             '%' => pad("%");
-             otherwise =>
-               // Unknown control char.  Just output the text we've seen...
-               copy-sequence(pattern, start: start, end: index);
+           select (consume())
+             '{'       => parse-long-format-control();
+             'd'       => %%date;
+             'l', 'L'  => %%severity;
+             'm'       => %%message;
+             'p'       => %%process;
+             'r'       => %%milliseconds;
+             's'       => %%severity;
+             't'       => %%thread;
+             '%'       => pad("%");
            end);
     end while;
   end block;
